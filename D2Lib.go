@@ -81,10 +81,13 @@ func configure() {
 }
 
 func dirScan() {
+	fixTimes := 0
+
 	if _, err := os.Stat(rootPath + "/" + storageLocation); os.IsNotExist(err) {
 		// storage folder does not exist
 		log.Println("\033[93m> Storage folder does not exist. Now creating one...\033[0m")
 		_ = os.Mkdir(rootPath+"/"+storageLocation, 0755)
+		fixTimes += 1
 	}
 	if _, err := os.Stat(rootPath + "/" + storageLocation + "/" + homePage); os.IsNotExist(err) {
 		// home page does not exist
@@ -92,18 +95,21 @@ func dirScan() {
 		newFile, _ := os.Create(rootPath + "/" + storageLocation + "/" + homePage)
 		_, _ = newFile.WriteString("# Home Page")
 		_ = newFile.Close()
+		fixTimes += 1
 	}
 	if _, err := os.Stat(rootPath + "/keypool.lock"); os.IsNotExist(err) {
 		// keypool does not exist
 		log.Println("\033[93m> Key pool does not exist. Now creating one...\033[0m")
 		newFile, _ := os.Create(rootPath + "/keypool.lock")
 		_ = newFile.Close()
+		fixTimes += 1
 	}
 
 	if _, err := os.Stat(rootPath + "/templates"); os.IsNotExist(err) {
 		// templates folder does not exist
 		log.Println("\033[93m> Templates folder does not exist. Now creating one...\033[0m")
 		_ = os.Mkdir(rootPath+"/templates", 0755)
+		fixTimes += 1
 	}
 
 	if _, err := os.Stat(rootPath + "/templates/login.html"); os.IsNotExist(err) {
@@ -112,6 +118,7 @@ func dirScan() {
 		newFile, _ := os.Create(rootPath + "/templates/login.html")
 		_, _ = newFile.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>Login</title>\n    <style>\n        body {\n            background-color: #292929;\n        }\n\n        div {\n            margin: 20px;\n            padding: 10px;\n        }\n\n        hr {\n            border-top: 5px solid #c3c3c3;\n            border-bottom-width: 0;\n            border-left-width: 0;\n            border-right-width: 0;\n            border-radius: 3px;\n        }\n\n        h1 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 250%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h2 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 220%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h3 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 190%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h4 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 170%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h5 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 150%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h6 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 130%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        code {\n            color: #c8c8c8;\n            font-family: Courier New, serif;\n        }\n\n        a {\n            text-decoration: None;\n            color: #58748d;\n            font-family: sans-serif;\n            letter-spacing: 1px;\n        }\n\n        a:link, a:visited {\n            color: #58748d;\n        }\n\n        a:hover {\n            color: #539899;\n            text-decoration: none;\n        }\n\n        a:active {\n            color: #c3c3c3;\n            background: #101010;\n        }\n\n        p {\n            color: #c3c3c3;\n            font-family: Helvetica, serif;\n            font-size: 100%;\n            display: inline;\n            text-indent: 100px;\n            letter-spacing: 1px;\n            line-height: 120%;\n        }\n\n        ul {\n            list-style-type: square;\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n        }\n\n        ol {\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n        }\n\n        table {\n            border: 2px solid #101010;\n            font-family: Helvetica, serif;\n        }\n\n        th {\n            border: 1px solid #101010;\n            font-family: Helvetica, serif;\n            color: #c3c0c3;\n            font-weight: bold;\n            text-align: center;\n            padding: 10px;\n        }\n\n        td {\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n            text-align: center;\n            padding: 2px;\n        }\n\n        input {\n            color: #c3c3c3;\n            font-family: Courier, serif;\n            background: #101010;\n            border-top-width: 0;\n            border-bottom-width: 2px;\n            border-left-width: 0;\n            border-right-width: 0;\n            height: 30px;\n            width: 500px;\n            font-size: 15px;\n        }\n\n        ::placeholder {\n            text-align: center;\n        }\n    </style>\n</head>\n<body>\n<center>\n    <h1>Login</h1>\n    <form method=\"post\" action=\"/login\">\n        <label for=\"name\">\n        <input type=\"text\" id=\"name\" name=\"name\" placeholder=\"> Username <\"></label>\n        <br>\n        <label for=\"pass\">\n        <input type=\"password\" id=\"pass\" name=\"pass\" placeholder=\"> Password <\"></label>\n        <br>\n        <input type=\"submit\" name=\"Login\">\n    </form>\n</center>\n</body>\n</html>")
 		_ = newFile.Close()
+		fixTimes += 1
 	}
 
 	if _, err := os.Stat(rootPath + "/templates/index.html"); os.IsNotExist(err) {
@@ -120,10 +127,13 @@ func dirScan() {
 		newFile, _ := os.Create(rootPath + "/templates/index.html")
 		_, _ = newFile.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <title>\n{{ TITLE }}\n    </title>\n    <style>\n        body {\n            background-color: #292929;\n        }\n\n        @keyframes fadeInAnimation {\n            0% {\n                opacity: 0;\n            }\n            100% {\n                opacity: 1;\n            }\n        }\n\n        div {\n            margin: 20px;\n            padding: 10px;\n        }\n\n        hr {\n            border-top: 5px solid #c3c3c3;\n            border-bottom-width: 0;\n            border-left-width: 0;\n            border-right-width: 0;\n            border-radius: 3px;\n        }\n\n        h1 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 250%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h2 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 220%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h3 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 190%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h4 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 170%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h5 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 150%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        h6 {\n            color: #c3c3c3;\n            font-family: Arial, serif;\n            font-size: 130%;\n            text-align: center;\n            letter-spacing: 3px;\n        }\n\n        code {\n            color: #c8c8c8;\n            font-family: Courier New, serif;\n        }\n\n        a {\n            text-decoration: None;\n            color: #58748d;\n            font-family: sans-serif;\n            letter-spacing: 1px;\n        }\n\n        a:link, a:visited {\n            color: #58748d;\n        }\n\n        a:hover {\n            color: #539899;\n            text-decoration: none;\n        }\n\n        a:active {\n            color: #c3c3c3;\n            background: #101010;\n        }\n\n        p {\n            color: #c3c3c3;\n            font-family: Helvetica, serif;\n            font-size: 100%;\n            display: inline;\n            text-indent: 100px;\n            letter-spacing: 1px;\n            line-height: 120%;\n        }\n\n        p.warn {\n            color: #e33a3a;\n            font-family: Helvetica, serif;\n            font-size: 100%;\n            display: inline;\n            text-indent: 100px;\n            letter-spacing: 1px;\n            line-height: 120%;\n        }\n\n        ul {\n            list-style-type: square;\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n        }\n\n        ol {\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n        }\n\n        table {\n            border: 2px solid #101010;\n            font-family: Helvetica, serif;\n        }\n\n        th {\n            border: 1px solid #101010;\n            font-family: Helvetica, serif;\n            color: #c3c0c3;\n            font-weight: bold;\n            text-align: center;\n            padding: 10px;\n        }\n\n        td {\n            font-family: Helvetica, serif;\n            color: #c3c3c3;\n            text-align: center;\n            padding: 2px;\n        }\n\n        input {\n            color: #c3c3c3;\n            font-family: Helvetica, serif;\n            background: #101010;\n            border-top-width: 0;\n            border-bottom-width: 0;\n            border-left-width: 0;\n            border-right-width: 0;\n            height: 20px;\n            width: 200px;\n        }\n\n        div.fade {\n            animation: fadeInAnimation ease 0.3s;\n            animation-iteration-count: 1;\n            animation-fill-mode: forwards;\n        }\n\n        li.logout {\n            float: right;\n        }\n\n        li.menu a {\n            display: block;\n            color: white;\n            text-align: center;\n            padding: 14px 16px;\n            text-decoration: none;\n        }\n\n        li.menu a:hover {\n            background-color: #111;\n        }\n\n        li.logout a {\n            display: block;\n            color: #958a4b;\n            text-align: center;\n            padding: 14px 16px;\n            text-decoration: none;\n        }\n\n        li.logout a:hover {\n            background-color: #111;\n        }\n    </style>\n</head>\n<body>\n<div><p class=\"warn\">{{ ACCOUNT }}</p></div>\n<div class=\"fade\">\n{{ CONTENT }}\n</div>\n<div>\n    <br><hr><p>Powered by D2Lib</p>\n</div>\n</body>\n</html>")
 		_ = newFile.Close()
+		fixTimes += 1
 	}
 
-	log.Println("> Setup finished! Restart is required!")
-	os.Exit(0)
+	if fixTimes != 0 {
+		log.Println("> Setup finished! Restart is required!")
+		os.Exit(0)
+	}
 }
 
 func getKeys() {
