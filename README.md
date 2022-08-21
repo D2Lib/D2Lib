@@ -12,3 +12,4 @@ D2Lib(D2Lib-Go) is the next generation for [D2Lib](https://github.com/ArthurZhou
 (On the first launch, Go will download all the dependiences, so it will take more time)
 6. If you see this log ` > Setup finished! Restart is required!`, type `go run ./D2Lib.go` again and press enter.
 7. If everything are on their way, you can see a log `> Server opened on ...`. Congradulations! D2Lib is now running.
+8. For further informations, please visit our [wiki](https://github.com/D2Lib/D2Lib/wiki)
