@@ -3,6 +3,9 @@ D2Lib(D2Lib-Go) is the next generation for [D2Lib](https://github.com/ArthurZhou
 
 ***WARNING: This project is still in early alpha. Please do not use it in a production environment***
 
+![D2Lib-Go icon](https://user-images.githubusercontent.com/89689293/185839061-55903338-dc20-4275-a402-aa77586602d9.svg)
+
+
 ## Installations
 1. Install Go 1.19
 2. Find a folder to place it and remember its path
