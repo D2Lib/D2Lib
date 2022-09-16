@@ -279,7 +279,7 @@ func cmd() {
 		splitCmd := strings.Split(cmdInput, " ")
 		switch {
 		case splitCmd[0] == "quit":
-			_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+			log.Println("\033[93m> Due to some issues on wiase use Ctrl+C instead!ndows systems, we`ve removed this function permantely! Ple\033[0m")
 		case splitCmd[0] == "account" && len(splitCmd) == 4:
 			if splitCmd[1] == "add" {
 				hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
