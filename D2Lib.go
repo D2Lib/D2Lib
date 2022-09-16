@@ -2,7 +2,7 @@ package main
 
 /*
 D2Lib-Go
-Version 0.2.0a
+Version 0.2.1a
 By ArthurZhou
 Follows GPL-2.0 License
 
@@ -26,7 +26,7 @@ import (
 	"syscall"
 )
 
-const VER = "0.2.0a"
+const VER = "0.2.1a"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -308,8 +308,8 @@ func main() {
 		case os.Interrupt:
 			// handle SIGINT
 			print("\n")
-			log.Println("\033[1;30;47m> SIGINT(Interrupt Signal) received. Shutting down server...\033[0m")
-			log.Println("\033[1;30;47m> Server stopped!\033[0m")
+			log.Println("\033[1;30m> SIGINT(Interrupt Signal) received. Shutting down server...\033[0m")
+			log.Println("\033[1;30m> Server stopped!\033[0m")
 			os.Exit(0)
 		case syscall.SIGTERM:
 			// handle SIGTERM
