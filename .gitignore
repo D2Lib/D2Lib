@@ -25,3 +25,5 @@
 
 # Maven
 target/
+
+keypool.lock

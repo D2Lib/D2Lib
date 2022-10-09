@@ -2,7 +2,6 @@ package main
 
 /*
 D2Lib-Go
-Version 0.2.0a
 By ArthurZhou
 Follows GPL-2.0 License
 
@@ -18,6 +17,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"gopkg.in/ini.v1"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +26,7 @@ import (
 	"syscall"
 )
 
-const VER = "0.2.0a"
+const VER = "0.2.2-s20221009"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -45,6 +45,7 @@ var router = mux.NewRouter()
 var keys []string
 var loginPage string
 var indexPage string
+var menuRender string
 
 func configure() {
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
@@ -148,10 +149,8 @@ func requestHandler(response http.ResponseWriter, request *http.Request) {
 		log.Printf("[%s] > redirect because not logged in\n", request.RemoteAddr)
 		http.Redirect(response, request, "/login", 302)
 	} else { // logged in
-		params := mux.Vars(request)
-		reqURL := "/" + params["path"] // get request url
-		log.Printf("[%s] > request for url: %s\n", request.RemoteAddr, reqURL)
-
+		reqURL := "/" + request.URL.Query().Get("path")
+		log.Printf("[%s] > request for doc: %s\n", request.RemoteAddr, reqURL)
 		if _, err := os.Stat(rootPath + "/" + storageLocation + reqURL); !os.IsNotExist(err) {
 			// url exists
 			filePath := rootPath + "/" + storageLocation + reqURL
@@ -164,11 +163,7 @@ func requestHandler(response http.ResponseWriter, request *http.Request) {
 				// render markdown as html
 				fileText = strings.ReplaceAll(indexPage, "{{ TITLE }}", fileName)
 				fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
-				if enableLogin {
-					fileText = strings.ReplaceAll(fileText, "{{ ACCOUNT }}", "<a href=\"/logout\">Logout</a>")
-				} else {
-					fileText = strings.ReplaceAll(fileText, "{{ ACCOUNT }}", "")
-				}
+				fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
 			}
 			_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
 		} else {
@@ -268,7 +263,7 @@ func logoutHandler(response http.ResponseWriter, request *http.Request) {
 
 func redirectHandler(response http.ResponseWriter, request *http.Request) {
 	// if request for root, redirect to home page
-	http.Redirect(response, request, "/"+homePage, 302)
+	http.Redirect(response, request, "/docs?path="+homePage, 302)
 }
 
 func cmd() {
@@ -308,8 +303,8 @@ func main() {
 		case os.Interrupt:
 			// handle SIGINT
 			print("\n")
-			log.Println("\033[1;30;47m> SIGINT(Interrupt Signal) received. Shutting down server...\033[0m")
-			log.Println("\033[1;30;47m> Server stopped!\033[0m")
+			log.Println("\033[1;30m> SIGINT(Interrupt Signal) received. Shutting down server...\033[0m")
+			log.Println("\033[1;30m> Server stopped!\033[0m")
 			os.Exit(0)
 		case syscall.SIGTERM:
 			// handle SIGTERM
@@ -327,8 +322,18 @@ func main() {
 	dirScan()
 	log.Println("> Loading key pool...")
 	getKeys()
+	log.Println("> Rendering menu bar...")
+	if enableLogin {
+		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
+	}
+	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>"
+	files, _ := ioutil.ReadDir(rootPath + "/" + storageLocation)
+	for _, f := range files {
+		if f.IsDir() {
+			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + homePage + "\">" + f.Name() + "</a></li>"
+		}
+	}
 	log.Println("> Done!")
-	log.Printf("\033[95m> Server opened on %s\033[0m\n", addr)
 	go cmd() // start cmd
 
 	// set handlers
@@ -337,8 +342,9 @@ func main() {
 		router.HandleFunc("/login", loginHandler).Methods("POST")
 		router.HandleFunc("/logout", logoutHandler).Methods("GET")
 	}
-	router.HandleFunc("/{path}", requestHandler).Methods("GET")
+	router.HandleFunc("/docs", requestHandler).Methods("GET")
 	router.HandleFunc("/", redirectHandler).Methods("GET")
+	log.Printf("\033[95m> Server opened on %s\033[0m\n", addr)
 	http.Handle(handleURL, router) // handle requests to requestHandler
 
 	err := http.ListenAndServe(addr, nil)

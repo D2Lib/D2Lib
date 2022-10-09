@@ -176,6 +176,18 @@
             animation-fill-mode: forwards;
         }
 
+        ul.menu {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        li.menu {
+            float: left;
+        }
+
         li.logout {
             float: right;
         }
@@ -206,7 +218,9 @@
     </style>
 </head>
 <body>
-<div><p class="warn">{{ ACCOUNT }}</p></div>
+<div>
+    <ul class="menu">{{ MENU }}</ul>
+</div>
 <div class="fade">
 {{ CONTENT }}
 </div>
