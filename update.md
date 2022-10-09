@@ -1,5 +1,5 @@
-### What's new in 0.2.1
+### What's new in 0.2.2-s20221009
 ***
 
-1. remove `quit` command, 
-because it cannot run on Windows. `Ctrl+C` is still available
+1. add menu bar
+2. new url structure: `/dir/home.md` ==> `/docs?path=dir/home.md`
