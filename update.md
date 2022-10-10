@@ -1,5 +1,7 @@
-### What's new in 0.2.2-s20221009
+### What's new in 0.2.2-s20221010
 ***
 
-1. add menu bar
-2. new url structure: `/dir/home.md` ==> `/docs?path=dir/home.md`
+1. fix template generation
+2. support favicon now
+3. support customized 404 page(edit it by changing `fnfPage` in `config.ini`)
+4. remove deprecated config `handleURL`

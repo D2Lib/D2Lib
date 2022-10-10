@@ -168,6 +168,18 @@ div.fade {
     animation-fill-mode: forwards;
 }
 
+ul.menu {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+}
+
+li.menu {
+    float: left;
+}
+
 li.logout {
     float: right;
 }
