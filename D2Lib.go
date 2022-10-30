@@ -26,7 +26,7 @@ import (
 	"syscall"
 )
 
-const VER = "0.2.2-s20221010"
+const VER = "0.2.2-s20221030-testbuild"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 

@@ -27,3 +27,4 @@
 target/
 
 keypool.lock
+config.ini
