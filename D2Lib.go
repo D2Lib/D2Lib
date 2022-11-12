@@ -9,24 +9,20 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 */
 
 import (
-	"bufio"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"github.com/gomarkdown/markdown"
+	"D2Lib/core"
+	"bytes"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/securecookie"
 	"gopkg.in/ini.v1"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
-const VER = "0.2.2-s20221010"
+const VER = "0.2.2-s20221112-2-hotfix"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -37,12 +33,8 @@ var homePage string
 var enableLogin bool
 var fnfPage string
 
-var rootPath, _ = os.Getwd()          // get working dir path
-var cookieHandler = securecookie.New( // generate cookie key
-	securecookie.GenerateRandomKey(64),
-	securecookie.GenerateRandomKey(32))
+var rootPath, _ = os.Getwd() // get working dir path
 var router = mux.NewRouter()
-var keys []string
 var loginPage string
 var indexPage string
 var menuRender string
@@ -136,175 +128,18 @@ func dirScan() {
 	}
 }
 
-func getKeys() {
-	fileByte, _ := os.ReadFile(rootPath + "/keypool.lock")
-	keys = strings.Split(string(fileByte), "\n")
-}
-
-func requestHandler(response http.ResponseWriter, request *http.Request) {
-	// check if the user has logged in
-	userName := getUserName(request)
-	if userName == "" && enableLogin { // not logged in
-		log.Printf("[%s] > redirect because not logged in\n", request.RemoteAddr)
-		http.Redirect(response, request, "/login", 302)
-	} else { // logged in
-		reqURL := "/" + request.URL.Query().Get("path")
-		log.Printf("[%s] > request for doc: %s\n", request.RemoteAddr, reqURL)
-		if _, err := os.Stat(rootPath + "/" + storageLocation + reqURL); !os.IsNotExist(err) {
-			// url exists
-			filePath := rootPath + "/" + storageLocation + reqURL
-			fileByte, _ := os.ReadFile(filePath) // read file as byte array
-			fileText := string(fileByte)         // convert byte array to string
-			strLength := len(reqURL) - 3
-			if reqURL[strLength:] == ".md" { // is this a markdown file?
-				splPath := strings.Split(reqURL, "/")
-				fileName := strings.Join(splPath[len(splPath)-1:], "")
-				// render markdown as html
-				fileText = strings.ReplaceAll(indexPage, "{{ TITLE }}", fileName)
-				fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
-				fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
-			}
-			_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
-		} else {
-			// url does not exist
-			log.Printf("[%s] > url does not exist: %s\n", request.RemoteAddr, reqURL)
-			fileText := strings.ReplaceAll(indexPage, "{{ TITLE }}", "404 Page Not Found")
-			fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", fnfPage)
-			fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
-			_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
-		}
-	}
-}
-
-func getUserName(request *http.Request) (userName string) {
-	if cookie, err := request.Cookie("session"); err == nil {
-		cookieValue := make(map[string]string)
-		if err = cookieHandler.Decode("session", cookie.Value, &cookieValue); err == nil {
-			userName = cookieValue["name"]
-		}
-	}
-	return userName
-}
-
-func setSession(userName string, response http.ResponseWriter) {
-	value := map[string]string{
-		"name": userName,
-	}
-	if encoded, err := cookieHandler.Encode("session", value); err == nil {
-		cookie := &http.Cookie{
-			Name:  "session",
-			Value: encoded,
-			Path:  "/",
-		}
-		http.SetCookie(response, cookie)
-	}
-}
-
-func clearSession(response http.ResponseWriter) {
-	cookie := &http.Cookie{
-		Name:   "session",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	}
-	http.SetCookie(response, cookie)
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
-// login handler
-func loginHandler(response http.ResponseWriter, request *http.Request) {
-
-	// handle login form
-	name := request.FormValue("name")
-	pass := request.FormValue("pass")
-	redirectTarget := "/login"
-	hash := sha256.Sum256([]byte(name + " " + pass))
-	if contains(keys, hex.EncodeToString(hash[:])) && enableLogin {
-		setSession(name, response)
-		log.Printf("[%s] > logged in as %s\n", request.RemoteAddr, name)
-		redirectTarget = "/"
-	}
-	http.Redirect(response, request, redirectTarget, 302)
-}
-
-func loginPageHandler(response http.ResponseWriter, request *http.Request) {
-	if enableLogin {
-		// handle login page
-		log.Printf("[%s] > request for login page\n", request.RemoteAddr)
-		userName := getUserName(request)
-		if userName != "" {
-			http.Redirect(response, request, "/", 302)
-		} else {
-			_, _ = fmt.Fprintf(response, loginPage)
-		}
-	} else {
-		http.Redirect(response, request, "/", 302)
-	}
-}
-
-// logout handler
-func logoutHandler(response http.ResponseWriter, request *http.Request) {
-	if enableLogin {
-		userName := getUserName(request)
-		log.Printf("[%s] > logout %s\n", request.RemoteAddr, userName)
-		clearSession(response)
-		http.Redirect(response, request, "/", 302)
-	} else {
-		http.Redirect(response, request, "/", 302)
-	}
-}
-
-func redirectHandler(response http.ResponseWriter, request *http.Request) {
-	// if request for root, redirect to home page
-	http.Redirect(response, request, "/docs?path="+homePage, 302)
-}
-
-func faviconHandler(response http.ResponseWriter, request *http.Request) {
-	log.Println("> request for favicon")
-	http.ServeFile(response, request, rootPath+"/templates/favicon.ico")
-}
-
-func cmd() {
-	log.Println("> Command Line Tool started")
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		cmdInput := scanner.Text()
-		splitCmd := strings.Split(cmdInput, " ")
-		switch {
-		case splitCmd[0] == "quit":
-			log.Println("\033[93m> Due to some issues on wiase use Ctrl+C instead!ndows systems, we`ve removed this function permantely! Ple\033[0m")
-		case splitCmd[0] == "account" && len(splitCmd) == 4:
-			if splitCmd[1] == "add" {
-				hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
-				openFile, _ := os.OpenFile(rootPath+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
-				_ = openFile.Close()
-				keys = append(keys, hex.EncodeToString(hash[:]))
-				log.Printf("Successfully added account: %s %s\n", splitCmd[2], splitCmd[3])
-			} else if splitCmd[1] == "del" {
-				// pass
-			}
-		default:
-			log.Printf("> Unknown command: %s\n", cmdInput)
-		}
-	}
-}
-
 func main() {
+	// add deferred functions to prevent uncompleted shutdowns
 	defer os.Exit(0)
 	defer log.Fatalln("\033[91m> Process ended by deferred auto shutdown")
-	signalChannel := make(chan os.Signal, 2)
+
+	buf := bytes.Buffer{}                          // set a new buffer to store logs
+	log.SetOutput(io.MultiWriter(os.Stdout, &buf)) // set logger output
+
+	log.SetPrefix("STARTUP > ")
+	signalChannel := make(chan os.Signal, 2) // bind for signals
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
-	go func() {
+	go func() { // handle Ctrl+C signal and force kill signal
 		sig := <-signalChannel
 		switch sig {
 		case os.Interrupt:
@@ -322,40 +157,41 @@ func main() {
 	log.Printf("> D2Lib-Go Version %s by %s  GitHub repo %s\n", VER, AUTHOR, ProjRepo)
 	log.Println("> Press Ctrl+C to stop.")
 	log.Println("> Loading configurations")
-	configure()
+	configure() // load config
 	log.Printf("\033[95m> Working dir: %s\033[0m\n", rootPath)
 
 	log.Println("> Scanning working directory...")
-	dirScan()
-	log.Println("> Loading key pool...")
-	getKeys()
+	dirScan() // check dir
 	log.Println("> Rendering menu bar...")
-	if enableLogin {
+	if enableLogin { // add "logout" button to menubar
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
 	}
-	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>"
-	files, _ := ioutil.ReadDir(rootPath + "/" + storageLocation)
-	for _, f := range files {
+	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>" // add "home" button to menubar
+	files, _ := ioutil.ReadDir(rootPath + "/" + storageLocation)                  // search for folders in current dir
+	for _, f := range files {                                                     // render menubar
 		if f.IsDir() {
 			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + homePage + "\">" + f.Name() + "</a></li>"
 		}
 	}
 	log.Println("> Done!")
-	go cmd() // start cmd
+	go core.Cmd(rootPath) // start cmd
+
+	log.SetPrefix("MAIN > ")                                                            // set a prefix
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LUTC | log.Lmicroseconds) // ste logger flags
 
 	// set handlers
-	if enableLogin {
-		router.HandleFunc("/login", loginPageHandler).Methods("GET")
-		router.HandleFunc("/login", loginHandler).Methods("POST")
-		router.HandleFunc("/logout", logoutHandler).Methods("GET")
+	if enableLogin { // set auth functions
+		router.HandleFunc("/login", core.LoginPageHandler(enableLogin, loginPage)).Methods("GET")
+		router.HandleFunc("/login", core.LoginHandler(enableLogin)).Methods("POST")
+		router.HandleFunc("/logout", core.LogoutHandler(enableLogin)).Methods("GET")
 	}
-	router.HandleFunc("/favicon.ico", faviconHandler).Methods("GET")
-	router.HandleFunc("/docs", requestHandler).Methods("GET")
-	router.HandleFunc("/", redirectHandler).Methods("GET")
+	router.HandleFunc("/favicon.ico", core.FaviconHandler(rootPath)).Methods("GET")
+	router.HandleFunc("/docs", core.RequestHandler(enableLogin, rootPath, storageLocation, indexPage, menuRender, fnfPage)).Methods("GET")
+	router.HandleFunc("/", core.RedirectHandler(homePage)).Methods("GET")
 	log.Printf("\033[95m> Server opened on %s\033[0m\n", addr)
-	http.Handle("/", router) // handle requests to requestHandler
+	http.Handle("/", router) // handle requests to mux router
 
-	err := http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(addr, nil) // start http server
 	if err != nil {
 		log.Fatalf("\033[91m> FATAL: %v\n", err)
 		return
