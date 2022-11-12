@@ -1,6 +1,6 @@
 # D2Lib
-<center>
-  A simple webserver for building online knowledge bases with intergrated css style. Support both markdown and html files.
+
+A simple webserver for building online knowledge bases with intergrated css style. Support both markdown and html files.
 
 <hr>
 <br>
@@ -9,4 +9,4 @@
 <br>
 [D2Lib dev repo](https://github.com/ArthurZhou/D2Lib-Go)
 <br>
-  </center>
+
