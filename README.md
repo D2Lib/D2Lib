@@ -9,9 +9,7 @@ D2Lib(D2Lib-Go) is the next generation for [D2Lib](https://github.com/ArthurZhou
 ## Installations
 1. Install Go 1.19
 2. Find a folder to place it and remember its path
-3. On MacOS and Linux, type `curl -sL https://raw.githubusercontent.com/D2Lib/D2Lib/main/install.sh | bash -s -` in your Terminal and press enter.
-
-On Windows, you need to download it manually.
+3. On MacOS and Linux, type `curl -sL https://raw.githubusercontent.com/D2Lib/D2Lib/main/install.sh | bash -s -` in your Terminal and press enter.On Windows, you need to download it manually.
 (On the first launch, Go will download all the dependiences, so it will take more time)
 4. If you see this log ` > Setup finished! Restart is required!`, type `go run ./D2Lib.go` and press enter
 5. If everything are on their way, you can see a log `> Server opened on ...`. Congradulations! D2Lib is now running
