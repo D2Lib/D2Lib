@@ -1,4 +1,5 @@
-### What's new in 0.2.2-s20221112
+### What's new in 0.2.2-s20221112-2-hotfix
 ***
 
-1. optimize code structure: split `D2Lib.go` into `D2Lib.go`, `core/auth.go` and `core/render.go`
+1. move cmd from `D2Lib.go` to `cmd.go`
+2. fix account hot reload

@@ -7,11 +7,19 @@ import (
 	"github.com/gorilla/securecookie"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 var cookieHandler = securecookie.New( // generate cookie key
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32))
+var keys = getKeys()
+
+func getKeys() []string {
+	fileByte, _ := os.ReadFile("./keypool.lock")
+	return strings.Split(string(fileByte), "\n")
+}
 
 // get username for current session
 func getUserName(request *http.Request) (userName string) {
@@ -62,7 +70,7 @@ func contains(s []string, str string) bool {
 }
 
 // LoginHandler handle login
-func LoginHandler(keys []string, enableLogin bool) http.HandlerFunc {
+func LoginHandler(enableLogin bool) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		// receive login form
 		name := request.FormValue("name")
@@ -108,5 +116,18 @@ func LogoutHandler(enableLogin bool) http.HandlerFunc {
 		} else { // if not
 			http.Redirect(response, request, "/", 302) // redirect to root
 		}
+	}
+}
+
+func EditAccount(splitCmd []string, rootPath string) {
+	if splitCmd[1] == "add" {
+		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
+		openFile, _ := os.OpenFile(rootPath+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
+		_ = openFile.Close()
+		keys = append(keys, hex.EncodeToString(hash[:]))
+		log.Printf("Successfully added account: %s %s\n", splitCmd[2], splitCmd[3])
+	} else if splitCmd[1] == "del" {
+		// pass
 	}
 }

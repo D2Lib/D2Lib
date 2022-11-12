@@ -10,10 +10,7 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 
 import (
 	"D2Lib/core"
-	"bufio"
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"github.com/gorilla/mux"
 	"gopkg.in/ini.v1"
 	"io"
@@ -22,11 +19,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
-const VER = "0.2.2-s20221112"
+const VER = "0.2.2-s20221112-2-hotfix"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -39,7 +35,6 @@ var fnfPage string
 
 var rootPath, _ = os.Getwd() // get working dir path
 var router = mux.NewRouter()
-var keys []string
 var loginPage string
 var indexPage string
 var menuRender string
@@ -133,37 +128,6 @@ func dirScan() {
 	}
 }
 
-func getKeys() {
-	fileByte, _ := os.ReadFile(rootPath + "/keypool.lock")
-	keys = strings.Split(string(fileByte), "\n")
-}
-
-func cmd() {
-	log.Println("> Command Line Tool started")
-	scanner := bufio.NewScanner(os.Stdin) // check input
-	for scanner.Scan() {
-		cmdInput := scanner.Text()               // scan input
-		splitCmd := strings.Split(cmdInput, " ") // split args
-		switch {                                 // execute commands
-		case splitCmd[0] == "quit":
-			log.Println("\033[93m> Due to some issues on windows systems, we`ve removed this function permantely! Please use Ctrl+C instead!\033[0m")
-		case splitCmd[0] == "account" && len(splitCmd) == 4:
-			if splitCmd[1] == "add" {
-				hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
-				openFile, _ := os.OpenFile(rootPath+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
-				_ = openFile.Close()
-				keys = append(keys, hex.EncodeToString(hash[:]))
-				log.Printf("Successfully added account: %s %s\n", splitCmd[2], splitCmd[3])
-			} else if splitCmd[1] == "del" {
-				// pass
-			}
-		default:
-			log.Printf("> Unknown command: %s\n", cmdInput)
-		}
-	}
-}
-
 func main() {
 	// add deferred functions to prevent uncompleted shutdowns
 	defer os.Exit(0)
@@ -198,8 +162,6 @@ func main() {
 
 	log.Println("> Scanning working directory...")
 	dirScan() // check dir
-	log.Println("> Loading key pool...")
-	getKeys() // load keypool
 	log.Println("> Rendering menu bar...")
 	if enableLogin { // add "logout" button to menubar
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
@@ -212,7 +174,7 @@ func main() {
 		}
 	}
 	log.Println("> Done!")
-	go cmd() // start cmd
+	go core.Cmd(rootPath) // start cmd
 
 	log.SetPrefix("MAIN > ")                                                            // set a prefix
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.LUTC | log.Lmicroseconds) // ste logger flags
@@ -220,7 +182,7 @@ func main() {
 	// set handlers
 	if enableLogin { // set auth functions
 		router.HandleFunc("/login", core.LoginPageHandler(enableLogin, loginPage)).Methods("GET")
-		router.HandleFunc("/login", core.LoginHandler(keys, enableLogin)).Methods("POST")
+		router.HandleFunc("/login", core.LoginHandler(enableLogin)).Methods("POST")
 		router.HandleFunc("/logout", core.LogoutHandler(enableLogin)).Methods("GET")
 	}
 	router.HandleFunc("/favicon.ico", core.FaviconHandler(rootPath)).Methods("GET")
