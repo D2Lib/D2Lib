@@ -2,13 +2,12 @@ package core
 
 import (
 	"bufio"
-	"log"
 	"os"
 	"strings"
 )
 
 func Cmd(rootPath string) {
-	log.Println("> Command Line Tool started")
+	log.Debugln("Command Line Tool started")
 	scanner := bufio.NewScanner(os.Stdin) // check input
 	for scanner.Scan() {
 		cmdInput := scanner.Text() // scan input
@@ -24,12 +23,12 @@ func Executor(cmdInput string, rootPath string) {
 	case splitCmd[0] == "account" && len(splitCmd) == 4:
 		fAccount(splitCmd, rootPath)
 	default:
-		log.Printf("> Unknown command: %s\n", cmdInput)
+		log.Errorf("Unknown command: %s", cmdInput)
 	}
 }
 
 func fQuit() {
-	log.Println("\033[93m> Due to some issues on windows systems, we`ve removed this function permantely! Please use Ctrl+C instead!\033[0m")
+	log.Warnln("Due to some issues on windows systems, we`ve removed this function permantely! Please use Ctrl+C instead!")
 }
 
 func fAccount(splitCmd []string, rootPath string) {

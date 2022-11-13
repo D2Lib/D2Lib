@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"github.com/gomarkdown/markdown"
-	"log"
 	"net/http"
 	"os"
 	"strings"

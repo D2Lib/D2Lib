@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gorilla/securecookie"
-	"log"
 	"net/http"
 	"os"
 	"strings"
