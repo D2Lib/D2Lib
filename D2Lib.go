@@ -13,14 +13,13 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"gopkg.in/ini.v1"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-const VER = "0.2.2-s20221113"
+const VER = "0.2.2-s20221115-patch"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -171,7 +170,7 @@ func main() {
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
 	}
 	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>" // add "home" button to menubar
-	files, _ := ioutil.ReadDir(rootPath + "/" + storageLocation)                  // search for folders in current dir
+	files, _ := os.ReadDir(rootPath + "/" + storageLocation)                      // search for folders in current dir
 	for _, f := range files {                                                     // render menubar
 		if f.IsDir() {
 			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + homePage + "\">" + f.Name() + "</a></li>"
