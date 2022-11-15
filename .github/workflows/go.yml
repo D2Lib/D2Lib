@@ -23,10 +23,3 @@ jobs:
 
     - name: Test
       run: go test -v ./...
-        
-    - name: go-crossbuild-amd64
-      uses: izumin5210/action-go-crossbuild@v1.0.0
-      with:
-        name: D2Lib
-        arch: amd64
-        os: darwin,linux,windows
