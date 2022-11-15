@@ -7,7 +7,7 @@ import (
 )
 
 func Cmd(rootPath string) {
-	log.Debugln("Command Line Tool started")
+	log.Debug("Command Line Tool started")
 	scanner := bufio.NewScanner(os.Stdin) // check input
 	for scanner.Scan() {
 		cmdInput := scanner.Text() // scan input
@@ -28,7 +28,7 @@ func Executor(cmdInput string, rootPath string) {
 }
 
 func fQuit() {
-	log.Warnln("Due to some issues on windows systems, we`ve removed this function permantely! Please use Ctrl+C instead!")
+	log.Warn("Due to some issues on windows systems, we`ve removed this function permanently! Please use Ctrl+C instead!")
 }
 
 func fAccount(splitCmd []string, rootPath string) {

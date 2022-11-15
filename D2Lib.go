@@ -131,7 +131,6 @@ func main() {
 	// add deferred functions to prevent uncompleted shutdowns
 	defer os.Exit(0)
 	defer log.Trace("Process ended by deferred auto shutdown")
-	fmt.Print("\n")
 	fmt.Print(`
   ____ ____  _     _ _     
  |  _ \___ \| |   (_) |__  

@@ -13,11 +13,11 @@ func RequestHandler(enableLogin bool, rootPath string, storageLocation string, i
 		// check if the user has logged in
 		userName := getUserName(request)
 		if userName == "" && enableLogin { // not logged in
-			log.Printf("[%s] > redirect because not logged in\n", request.RemoteAddr)
+			log.Tracef("[%s] > redirect because not logged in", request.RemoteAddr)
 			http.Redirect(response, request, "/login", 302)
 		} else { // logged in
 			reqURL := "/" + request.URL.Query().Get("path")
-			log.Printf("[%s] > request for doc: %s\n", request.RemoteAddr, reqURL)
+			log.Tracef("[%s] > request for doc: %s", request.RemoteAddr, reqURL)
 			if _, err := os.Stat(rootPath + "/" + storageLocation + reqURL); !os.IsNotExist(err) {
 				// url exists
 				filePath := rootPath + "/" + storageLocation + reqURL
@@ -35,7 +35,7 @@ func RequestHandler(enableLogin bool, rootPath string, storageLocation string, i
 				_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
 			} else {
 				// url does not exist
-				log.Printf("[%s] > url does not exist: %s\n", request.RemoteAddr, reqURL)
+				log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
 				fileText := strings.ReplaceAll(indexPage, "{{ TITLE }}", "404 Page Not Found")
 				fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", fnfPage)
 				fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
@@ -54,7 +54,7 @@ func RedirectHandler(homePage string) http.HandlerFunc {
 
 func FaviconHandler(rootPath string) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
-		log.Println("> request for favicon")
+		log.Tracef("[%s] > request for favicon", request.RemoteAddr)
 		http.ServeFile(response, request, rootPath+"/templates/favicon.ico")
 	}
 }

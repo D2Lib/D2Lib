@@ -79,7 +79,7 @@ func LoginHandler(enableLogin bool) http.HandlerFunc {
 		if contains(keys, hex.EncodeToString(hash[:])) && enableLogin { // compare with stored hash IDs
 			// exist hash ID (correct psw)
 			setSession(name, response) // set cookie session to remember login status
-			log.Printf("[%s] > logged in as %s\n", request.RemoteAddr, name)
+			log.Tracef("[%s] > logged in as %s", request.RemoteAddr, name)
 			redirectTarget = "/" // set redirect target to root
 		}
 		http.Redirect(response, request, redirectTarget, 302) // do redirect
@@ -91,7 +91,7 @@ func LoginPageHandler(enableLogin bool, loginPage string) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		if enableLogin { // check if login is enabled
 			// handle login page
-			log.Printf("[%s] > request for login page\n", request.RemoteAddr)
+			log.Tracef("[%s] > request for login page", request.RemoteAddr)
 			userName := getUserName(request) // get username
 			if userName != "" {              // if username exists for current session (already logged in)
 				http.Redirect(response, request, "/", 302) // redirect to root
@@ -109,7 +109,7 @@ func LogoutHandler(enableLogin bool) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		if enableLogin { // check if login is enabled
 			userName := getUserName(request) // get username
-			log.Printf("[%s] > logout %s\n", request.RemoteAddr, userName)
+			log.Tracef("[%s] > logout %s", request.RemoteAddr, userName)
 			clearSession(response)                     // delete cookie for current session (clear login status)
 			http.Redirect(response, request, "/", 302) // redirect to root
 		} else { // if not
@@ -125,7 +125,7 @@ func EditAccount(splitCmd []string, rootPath string) {
 		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
 		_ = openFile.Close()
 		keys = append(keys, hex.EncodeToString(hash[:]))
-		log.Printf("Successfully added account: %s %s\n", splitCmd[2], splitCmd[3])
+		log.Warnf("Successfully added account: %s %s", splitCmd[2], splitCmd[3])
 	} else if splitCmd[1] == "del" {
 		// pass
 	}
