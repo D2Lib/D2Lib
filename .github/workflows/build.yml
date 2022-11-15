@@ -1,0 +1,29 @@
+name: build
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "release" ]
+
+jobs:
+   release-on-push:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - id: release
+        uses: rymndhng/release-on-push-action@master
+        with:
+          bump_version_scheme: minor
+          tag_prefix: v
+          
+      - name: Check Output Parameters
+        run: |
+          echo "Got tag name ${{ steps.release.outputs.tag_name }}"
+          echo "Got release version ${{ steps.release.outputs.version }}"
+      - name: go-crossbuild-amd64
+        uses: izumin5210/action-go-crossbuild@v1.0.0
+        with:
+          name: D2Lib
+          arch: amd64
+          os: darwin,linux,windows
