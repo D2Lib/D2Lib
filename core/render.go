@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func RequestHandler(enableLogin bool, rootPath string, storageLocation string, indexPage string, menuRender string, fnfPage string) http.HandlerFunc {
+func RequestHandler(enableLogin bool, rootPath string, storageLocation string, indexPage string, indexStyle string, menuRender string, fnfPage string) http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		// check if the user has logged in
 		userName := getUserName(request)
@@ -17,29 +17,36 @@ func RequestHandler(enableLogin bool, rootPath string, storageLocation string, i
 			http.Redirect(response, request, "/login", 302)
 		} else { // logged in
 			reqURL := "/" + request.URL.Query().Get("path")
-			log.Tracef("[%s] > request for doc: %s", request.RemoteAddr, reqURL)
-			if _, err := os.Stat(rootPath + "/" + storageLocation + reqURL); !os.IsNotExist(err) {
-				// url exists
-				filePath := rootPath + "/" + storageLocation + reqURL
-				fileByte, _ := os.ReadFile(filePath) // read file as byte array
-				fileText := string(fileByte)         // convert byte array to string
-				strLength := len(reqURL) - 3
-				if reqURL[strLength:] == ".md" { // is this a markdown file?
-					splPath := strings.Split(reqURL, "/")
-					fileName := strings.Join(splPath[len(splPath)-1:], "")
-					// render markdown as html
-					fileText = strings.ReplaceAll(indexPage, "{{ TITLE }}", fileName)
-					fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
-					fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
+			if len(reqURL) > 1 {
+				log.Tracef("[%s] > request for doc: %s", request.RemoteAddr, reqURL)
+				if _, err := os.Stat(rootPath + "/" + storageLocation + reqURL); !os.IsNotExist(err) {
+					// url exists
+					filePath := rootPath + "/" + storageLocation + reqURL
+					fileByte, _ := os.ReadFile(filePath) // read file as byte array
+					fileText := string(fileByte)         // convert byte array to string
+					if reqURL[len(reqURL)-3:] == ".md" { // is this a markdown file?
+						splPath := strings.Split(reqURL, "/")
+						fileName := strings.Join(splPath[len(splPath)-1:], "")
+						// render markdown as html
+						fileText = strings.ReplaceAll(indexPage, "{{ TITLE }}", fileName)
+						fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
+						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
+					} else if reqURL[len(reqURL)-5:] == ".html" { // is this a markdown file?
+						splPath := strings.Split(reqURL, "/")
+						fileName := strings.Join(splPath[len(splPath)-1:], "")
+						// render markdown as html
+						fileText = strings.ReplaceAll(string(fileByte), "{{ TITLE }}", fileName)
+						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
+						fileText = strings.ReplaceAll(fileText, "{{ STYLE }}", "<style>"+indexStyle+"</style>")
+					}
+					_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
+				} else {
+					// url does not exist
+					fnfHandler(request, response, reqURL, indexPage, fnfPage, menuRender)
 				}
-				_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
 			} else {
-				// url does not exist
-				log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
-				fileText := strings.ReplaceAll(indexPage, "{{ TITLE }}", "404 Page Not Found")
-				fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", fnfPage)
-				fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
-				_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
+				log.Tracef("[%s] > blank url", request.RemoteAddr)
+				fnfHandler(request, response, reqURL, indexPage, fnfPage, menuRender)
 			}
 		}
 	}
@@ -57,4 +64,12 @@ func FaviconHandler(rootPath string) http.HandlerFunc {
 		log.Tracef("[%s] > request for favicon", request.RemoteAddr)
 		http.ServeFile(response, request, rootPath+"/templates/favicon.ico")
 	}
+}
+
+func fnfHandler(request *http.Request, response http.ResponseWriter, reqURL string, indexPage string, fnfPage string, menuRender string) {
+	log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
+	fileText := strings.ReplaceAll(indexPage, "{{ TITLE }}", "404 Page Not Found")
+	fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", fnfPage)
+	fileText = strings.ReplaceAll(fileText, "{{ MENU }}", menuRender)
+	_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
 }

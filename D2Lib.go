@@ -16,10 +16,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
-const VER = "0.2.2-s20221115-patch"
+const VER = "0.2.2-s20221205"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -34,6 +35,7 @@ var rootPath, _ = os.Getwd() // get working dir path
 var router = mux.NewRouter()
 var loginPage string
 var indexPage string
+var indexStyle string
 var menuRender string
 
 var log = core.Log
@@ -66,9 +68,12 @@ func configure() {
 	loFileByte, _ := os.ReadFile(loginPath)
 	loginPage = string(loFileByte)
 
+	indexStylePath := rootPath + "/templates/index.css"
+	insFileByte, _ := os.ReadFile(indexStylePath)
+	indexStyle = string(insFileByte)
 	indexPath := rootPath + "/templates/index.html"
 	inFileByte, _ := os.ReadFile(indexPath)
-	indexPage = string(inFileByte)
+	indexPage = strings.ReplaceAll(string(inFileByte), "{{ STYLE }}", "<style>"+indexStyle+"</style>")
 }
 
 func dirScan() {
@@ -165,6 +170,7 @@ func main() {
 	log.Debug("Scanning working directory...")
 	dirScan() // check dir
 	log.Debug("Rendering menu bar...")
+	menuRender += "<div><ul class=\"menu\">"
 	if enableLogin { // add "logout" button to menubar
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
 	}
@@ -175,6 +181,7 @@ func main() {
 			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + homePage + "\">" + f.Name() + "</a></li>"
 		}
 	}
+	menuRender += "</ul></div>"
 	log.Info("Done!")
 	go core.Cmd(rootPath) // start cmd
 
@@ -185,7 +192,7 @@ func main() {
 		router.HandleFunc("/logout", core.LogoutHandler(enableLogin)).Methods("GET")
 	}
 	router.HandleFunc("/favicon.ico", core.FaviconHandler(rootPath)).Methods("GET")
-	router.HandleFunc("/docs", core.RequestHandler(enableLogin, rootPath, storageLocation, indexPage, menuRender, fnfPage)).Methods("GET")
+	router.HandleFunc("/docs", core.RequestHandler(enableLogin, rootPath, storageLocation, indexPage, indexStyle, menuRender, fnfPage)).Methods("GET")
 	router.HandleFunc("/", core.RedirectHandler(homePage)).Methods("GET")
 	log.Infof("Server opened on %s", addr)
 	http.Handle("/", router) // handle requests to mux router

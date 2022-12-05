@@ -1,4 +1,4 @@
-### What's new in 0.2.2-s20221115-patch
+### What's new in 0.2.2-s20221205
 ***
 
-1. fix warning: `iouitl.ReadDir` deprecated
+1. improve html file display

@@ -74,7 +74,7 @@ func LoginHandler(enableLogin bool) http.HandlerFunc {
 		// receive login form
 		name := request.FormValue("name")
 		pass := request.FormValue("pass")
-		redirectTarget := "/login"
+		redirectTarget := "/login?status=err"
 		hash := sha256.Sum256([]byte(name + " " + pass))                // generate hash
 		if contains(keys, hex.EncodeToString(hash[:])) && enableLogin { // compare with stored hash IDs
 			// exist hash ID (correct psw)
@@ -96,7 +96,11 @@ func LoginPageHandler(enableLogin bool, loginPage string) http.HandlerFunc {
 			if userName != "" {              // if username exists for current session (already logged in)
 				http.Redirect(response, request, "/", 302) // redirect to root
 			} else { // if no username (not logged in)
-				_, _ = fmt.Fprintf(response, loginPage) // print login page
+				loginStatus := ""
+				if request.URL.Query().Get("status") == "err" {
+					loginStatus = "Error username or password"
+				}
+				_, _ = fmt.Fprintf(response, strings.ReplaceAll(loginPage, "{{ ERR }}", loginStatus)) // print login page
 			}
 		} else { // if not
 			http.Redirect(response, request, "/", 302) // redirect to root
