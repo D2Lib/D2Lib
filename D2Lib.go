@@ -20,27 +20,20 @@ import (
 	"syscall"
 )
 
-const VER = "0.2.2-s20221205"
+const VER = "0.2.2-s20221211"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
 // global configurations variables
-var addr string
-var storageLocation string
-var homePage string
-var enableLogin bool
-var fnfPage string
 
 var rootPath, _ = os.Getwd() // get working dir path
 var router = mux.NewRouter()
-var loginPage string
-var indexPage string
-var indexStyle string
-var menuRender string
 
 var log = core.Log
 
 func configure() {
+	_ = os.Setenv("D2LIB_root", rootPath)
+
 	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
 		// config fie does not exist
 		log.Warn("Config file does not exists. Now creating one...")
@@ -57,38 +50,39 @@ func configure() {
 		log.Fatalf("Failed to read file: %v", err)
 	}
 	// read configurations
-	addr = cfg.Section("Network").Key("addr").String()
-	storageLocation = cfg.Section("Storage").Key("storageLocation").String()
-	homePage = cfg.Section("Storage").Key("homePage").String()
-	enableLogin = cfg.Section("Security").Key("enableLogin").MustBool()
-	fnfPage = cfg.Section("Storage").Key("fnfPage").String()
+	_ = os.Setenv("D2LIB_addr", cfg.Section("Network").Key("addr").String())
+	_ = os.Setenv("D2LIB_sloc", cfg.Section("Storage").Key("storageLocation").String())
+	_ = os.Setenv("D2LIB_hpage", cfg.Section("Storage").Key("homePage").String())
+	_ = os.Setenv("D2LIB_elogn", cfg.Section("Security").Key("enableLogin").String())
+	_ = os.Setenv("D2LIB_fpage", cfg.Section("Storage").Key("fnfPage").String())
 
 	// load templates
 	loginPath := rootPath + "/templates/login.html"
 	loFileByte, _ := os.ReadFile(loginPath)
-	loginPage = string(loFileByte)
+	_ = os.Setenv("D2LIB_lpage", string(loFileByte))
 
 	indexStylePath := rootPath + "/templates/index.css"
 	insFileByte, _ := os.ReadFile(indexStylePath)
-	indexStyle = string(insFileByte)
+	indexStyle := string(insFileByte)
+	_ = os.Setenv("D2LIB_istyle", indexStyle)
 	indexPath := rootPath + "/templates/index.html"
 	inFileByte, _ := os.ReadFile(indexPath)
-	indexPage = strings.ReplaceAll(string(inFileByte), "{{ STYLE }}", "<style>"+indexStyle+"</style>")
+	_ = os.Setenv("D2LIB_ipage", strings.ReplaceAll(string(inFileByte), "{{ STYLE }}", "<style>"+indexStyle+"</style>"))
 }
 
 func dirScan() {
 	fixTimes := 0
 
-	if _, err := os.Stat(rootPath + "/" + storageLocation); os.IsNotExist(err) {
+	if _, err := os.Stat(rootPath + "/" + os.Getenv("D2LIB_sloc")); os.IsNotExist(err) {
 		// storage folder does not exist
 		log.Warn("Storage folder does not exist. Now creating one...")
-		_ = os.Mkdir(rootPath+"/"+storageLocation, 0755)
+		_ = os.Mkdir(rootPath+"/"+os.Getenv("D2LIB_sloc"), 0755)
 		fixTimes += 1
 	}
-	if _, err := os.Stat(rootPath + "/" + storageLocation + "/" + homePage); os.IsNotExist(err) {
+	if _, err := os.Stat(rootPath + "/" + os.Getenv("D2LIB_sloc") + "/" + os.Getenv("D2LIB_hpage")); os.IsNotExist(err) {
 		// home page does not exist
 		log.Warn("Home page does not exist. Now creating one...")
-		newFile, _ := os.Create(rootPath + "/" + storageLocation + "/" + homePage)
+		newFile, _ := os.Create(rootPath + "/" + os.Getenv("D2LIB_sloc") + "/" + os.Getenv("D2LIB_hpage"))
 		_, _ = newFile.WriteString("# Home Page")
 		_ = newFile.Close()
 		fixTimes += 1
@@ -170,34 +164,35 @@ func main() {
 	log.Debug("Scanning working directory...")
 	dirScan() // check dir
 	log.Debug("Rendering menu bar...")
-	menuRender += "<div><ul class=\"menu\">"
-	if enableLogin { // add "logout" button to menubar
+	menuRender := "<div><ul class=\"menu\">"
+	if os.Getenv("D2LIB_elogn") == "true" { // add "logout" button to menubar
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
 	}
 	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>" // add "home" button to menubar
-	files, _ := os.ReadDir(rootPath + "/" + storageLocation)                      // search for folders in current dir
+	files, _ := os.ReadDir(rootPath + "/" + os.Getenv("D2LIB_sloc"))              // search for folders in current dir
 	for _, f := range files {                                                     // render menubar
 		if f.IsDir() {
-			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + homePage + "\">" + f.Name() + "</a></li>"
+			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + os.Getenv("D2LIB_hpage") + "\">" + f.Name() + "</a></li>"
 		}
 	}
 	menuRender += "</ul></div>"
+	_ = os.Setenv("D2LIB_menu", menuRender)
 	log.Info("Done!")
-	go core.Cmd(rootPath) // start cmd
+	go core.Cmd() // start cmd
 
 	// set handlers
-	if enableLogin { // set auth functions
-		router.HandleFunc("/login", core.LoginPageHandler(enableLogin, loginPage)).Methods("GET")
-		router.HandleFunc("/login", core.LoginHandler(enableLogin)).Methods("POST")
-		router.HandleFunc("/logout", core.LogoutHandler(enableLogin)).Methods("GET")
+	if os.Getenv("D2LIB_elogn") == "true" { // set auth functions
+		router.HandleFunc("/login", core.LoginPageHandler()).Methods("GET")
+		router.HandleFunc("/login", core.LoginHandler()).Methods("POST")
+		router.HandleFunc("/logout", core.LogoutHandler()).Methods("GET")
 	}
-	router.HandleFunc("/favicon.ico", core.FaviconHandler(rootPath)).Methods("GET")
-	router.HandleFunc("/docs", core.RequestHandler(enableLogin, rootPath, storageLocation, indexPage, indexStyle, menuRender, fnfPage)).Methods("GET")
-	router.HandleFunc("/", core.RedirectHandler(homePage)).Methods("GET")
-	log.Infof("Server opened on %s", addr)
+	router.HandleFunc("/favicon.ico", core.FaviconHandler()).Methods("GET")
+	router.HandleFunc("/docs", core.RequestHandler()).Methods("GET")
+	router.HandleFunc("/", core.RedirectHandler()).Methods("GET")
+	log.Infof("Server opened on %s", os.Getenv("D2LIB_addr"))
 	http.Handle("/", router) // handle requests to mux router
 
-	err := http.ListenAndServe(addr, nil) // start http server
+	err := http.ListenAndServe(os.Getenv("D2LIB_addr"), nil) // start http server
 	if err != nil {
 		log.Panicf("%v", err)
 		return

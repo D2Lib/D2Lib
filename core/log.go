@@ -35,9 +35,32 @@ func (mf *MyFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+var logLevel logrus.Level
 var Log = &logrus.Logger{
-	Out:          os.Stderr,
-	Level:        logrus.DebugLevel,
+	Out: os.Stderr,
+	Level: func() logrus.Level {
+		logTextLevel := "debug"
+		switch logTextLevel {
+		case "trace":
+			logLevel = logrus.TraceLevel
+		case "debug":
+			logLevel = logrus.DebugLevel
+		case "info":
+			logLevel = logrus.InfoLevel
+		case "warn":
+			logLevel = logrus.WarnLevel
+		case "error":
+			logLevel = logrus.ErrorLevel
+		case "panic":
+			logLevel = logrus.PanicLevel
+		case "fatal":
+			logLevel = logrus.FatalLevel
+		default:
+			fmt.Printf("Unknown log level: %s.", os.Getenv("D2LIB_loglv"))
+			logLevel = logrus.InfoLevel
+		}
+		return logLevel
+	}(),
 	ReportCaller: true,
 	Formatter:    &MyFormatter{},
 }
