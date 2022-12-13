@@ -10,6 +10,7 @@ import (
 
 func RequestHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		// check if the user has logged in
 		userName := getUserName(request)
 		if userName == "" && os.Getenv("D2LIB_elogn") == "true" { // not logged in
@@ -61,12 +62,14 @@ func RedirectHandler() http.HandlerFunc {
 
 func FaviconHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		log.Tracef("[%s] > request for favicon", request.RemoteAddr)
 		http.ServeFile(response, request, os.Getenv("D2LIB_root")+"/templates/favicon.ico")
 	}
 }
 
 func fnfHandler(request *http.Request, response http.ResponseWriter, reqURL string) {
+	log := GetLogger()
 	log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
 	fileText := strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", "404 Page Not Found")
 	fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", os.Getenv("D2LIB_fpage"))

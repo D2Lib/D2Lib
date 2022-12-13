@@ -71,6 +71,7 @@ func contains(s []string, str string) bool {
 // LoginHandler handle login
 func LoginHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		// receive login form
 		name := request.FormValue("name")
 		pass := request.FormValue("pass")
@@ -89,6 +90,7 @@ func LoginHandler() http.HandlerFunc {
 // LoginPageHandler handle login page
 func LoginPageHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		if os.Getenv("D2LIB_elogn") == "true" { // check if login is enabled
 			// handle login page
 			log.Tracef("[%s] > request for login page", request.RemoteAddr)
@@ -111,6 +113,7 @@ func LoginPageHandler() http.HandlerFunc {
 // LogoutHandler handle logout
 func LogoutHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		if os.Getenv("D2LIB_elogn") == "true" { // check if login is enabled
 			userName := getUserName(request) // get username
 			log.Tracef("[%s] > logout %s", request.RemoteAddr, userName)
@@ -123,6 +126,7 @@ func LogoutHandler() http.HandlerFunc {
 }
 
 func EditAccount(splitCmd []string) {
+	log := GetLogger()
 	if splitCmd[1] == "add" {
 		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
 		openFile, _ := os.OpenFile(os.Getenv("D2LIB_root")+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
