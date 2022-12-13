@@ -8,6 +8,6 @@ RUN go mod download
 COPY *.go ./ /app/
 RUN go build -o /d2lib-docker
 
-EXPOSE 8090
+EXPOSE 8080
 
 CMD [ "/d2lib-docker" ]
