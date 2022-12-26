@@ -10,6 +10,11 @@ import (
 	"strings"
 )
 
+/*
+auth.go
+Handle login requests and manage accounts
+*/
+
 var cookieHandler = securecookie.New( // generate cookie key
 	securecookie.GenerateRandomKey(64),
 	securecookie.GenerateRandomKey(32))
@@ -125,27 +130,32 @@ func LogoutHandler() http.HandlerFunc {
 	}
 }
 
-func EditAccount(splitCmd []string) {
+func EditAccount(splitCmd []string) (bool, string) {
 	log := GetLogger()
-	if splitCmd[1] == "add" {
-		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
+	if splitCmd[1] == "add" { // add account
+		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3])) // generate hash
 		openFile, _ := os.OpenFile(os.Getenv("D2LIB_root")+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
+		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n")) // add to keypool file
 		_ = openFile.Close()
-		keys = append(keys, hex.EncodeToString(hash[:]))
+		keys = append(keys, hex.EncodeToString(hash[:])) // add to current keypool
 		log.Warnf("Successfully added account: %s %s", splitCmd[2], splitCmd[3])
+		return true, "Successfully added account: " + splitCmd[2] + " " + splitCmd[3]
 	} else if splitCmd[1] == "del" {
 		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
 		poolByte, _ := os.ReadFile(os.Getenv("D2LIB_root") + "/keypool.lock")
 		openFile, _ := os.OpenFile(os.Getenv("D2LIB_root")+"/keypool.lock", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-		_, _ = openFile.Write([]byte(strings.ReplaceAll(string(poolByte), hex.EncodeToString(hash[:])+"\n", "")))
+		_, _ = openFile.Write([]byte(strings.ReplaceAll(string(poolByte), hex.EncodeToString(hash[:])+"\n", ""))) // delete from keypool file
 		_ = openFile.Close()
-		for i, v := range keys {
+		for i, v := range keys { // delete from current keypool
 			if v == hex.EncodeToString(hash[:]) {
 				keys = append(keys[:i], keys[i+1:]...)
 				break
 			}
 		}
 		log.Warnf("Successfully deleted account: %s %s", splitCmd[2], splitCmd[3])
+		return true, "Successfully deleted account: " + splitCmd[2] + " " + splitCmd[3]
+	} else {
+		log.Errorf("Unknown param: %s", splitCmd[1])
+		return false, "Unknown param: " + splitCmd[1]
 	}
 }

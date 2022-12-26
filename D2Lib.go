@@ -1,13 +1,5 @@
 package main
 
-/*
-D2Lib-Go
-By ArthurZhou
-Follows GPL-2.0 License
-
-GitHub repo: https://github.com/D2Lib/D2Lib
-*/
-
 import (
 	"D2Lib/core"
 	"fmt"
@@ -20,7 +12,18 @@ import (
 	"syscall"
 )
 
-const VER = "0.2.2-s20221213"
+/*
+D2Lib-Go
+By ArthurZhou
+Follows GPL-2.0 License
+
+GitHub repo: https://github.com/D2Lib/D2Lib
+
+
+This is the main file of D2Lib, it`s used for loading configurations, scanning work directory and starting http server
+*/
+
+const VER = "0.2.2-s20221214"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -29,7 +32,7 @@ const ProjRepo = "https://github.com/D2Lib/D2Lib"
 var rootPath, _ = os.Getwd() // get working dir path
 var router = mux.NewRouter()
 
-func init() {
+func init() { // initialize configurations
 	_ = os.Setenv("D2LIB_root", rootPath)
 	fmt.Println("Scanning working directory...")
 	dirScan()
@@ -54,8 +57,10 @@ func init() {
 	_ = os.Setenv("D2LIB_addr", cfg.Section("Network").Key("addr").String())
 	_ = os.Setenv("D2LIB_sloc", cfg.Section("Storage").Key("storageLocation").String())
 	_ = os.Setenv("D2LIB_hpage", cfg.Section("Storage").Key("homePage").String())
-	_ = os.Setenv("D2LIB_elogn", cfg.Section("Security").Key("enableLogin").String())
 	_ = os.Setenv("D2LIB_fpage", cfg.Section("Storage").Key("fnfPage").String())
+	_ = os.Setenv("D2LIB_elogn", cfg.Section("Security").Key("enableLogin").String())
+	_ = os.Setenv("D2LIB_rmexe", cfg.Section("Security").Key("remoteExecute").String())
+	_ = os.Setenv("D2LIB_rmkey", cfg.Section("Security").Key("remoteKey").String())
 	_ = os.Setenv("D2LIB_loglv", cfg.Section("Logger").Key("logLevel").String())
 	_ = os.Setenv("D2LIB_logcl", cfg.Section("Logger").Key("logColor").String())
 
@@ -124,7 +129,7 @@ func dirScan() {
 	}
 
 	if _, err := os.Stat(rootPath + "/templates/index.css"); os.IsNotExist(err) {
-		// index template does not exist
+		// index css does not exist
 		fmt.Println("Index style does not exist. Now creating one...")
 		newFile, _ := os.Create(rootPath + "/templates/index.css")
 		_, _ = newFile.WriteString("body {\n    background-color: #292929;\n}\n\n@keyframes fadeInAnimation {\n    0% {\n        opacity: 0;\n    }\n    100% {\n        opacity: 1;\n    }\n}\n\ndiv {\n    margin: 20px;\n    padding: 10px;\n}\n\nhr {\n    border-top: 5px solid #c3c3c3;\n    border-bottom-width: 0;\n    border-left-width: 0;\n    border-right-width: 0;\n    border-radius: 3px;\n}\n\nh1 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 250%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\nh2 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 220%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\nh3 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 190%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\nh4 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 170%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\nh5 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 150%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\nh6 {\n    color: #c3c3c3;\n    font-family: Arial, serif;\n    font-size: 130%;\n    text-align: center;\n    letter-spacing: 3px;\n}\n\ncode {\n    color: #c8c8c8;\n    font-family: Courier New, serif;\n}\n\na {\n    text-decoration: None;\n    color: #58748d;\n    font-family: sans-serif;\n    letter-spacing: 1px;\n}\n\na:link, a:visited {\n    color: #58748d;\n}\n\na:hover {\n    color: #539899;\n    text-decoration: none;\n}\n\na:active {\n    color: #c3c3c3;\n    background: #101010;\n}\n\np {\n    color: #c3c3c3;\n    font-family: Helvetica, serif;\n    font-size: 100%;\n    display: inline;\n    text-indent: 100px;\n    letter-spacing: 1px;\n    line-height: 120%;\n}\n\np.warn {\n    color: #e33a3a;\n    font-family: Helvetica, serif;\n    font-size: 100%;\n    display: inline;\n    text-indent: 100px;\n    letter-spacing: 1px;\n    line-height: 120%;\n}\n\nul {\n    list-style-type: square;\n    font-family: Helvetica, serif;\n    color: #c3c3c3;\n}\n\nol {\n    font-family: Helvetica, serif;\n    color: #c3c3c3;\n}\n\ntable {\n    border: 2px solid #101010;\n    font-family: Helvetica, serif;\n}\n\nth {\n    border: 1px solid #101010;\n    font-family: Helvetica, serif;\n    color: #c3c0c3;\n    font-weight: bold;\n    text-align: center;\n    padding: 10px;\n}\n\ntd {\n    font-family: Helvetica, serif;\n    color: #c3c3c3;\n    text-align: center;\n    padding: 2px;\n}\n\ninput {\n    color: #c3c3c3;\n    font-family: Helvetica, serif;\n    background: #101010;\n    border-top-width: 0;\n    border-bottom-width: 0;\n    border-left-width: 0;\n    border-right-width: 0;\n    height: 20px;\n    width: 200px;\n}\n\ndiv.fade {\n    animation: fadeInAnimation ease 0.3s;\n    animation-iteration-count: 1;\n    animation-fill-mode: forwards;\n}\n\nul.menu {\n    list-style-type: none;\n    margin: 0;\n    padding: 0;\n    overflow: hidden;\n    background-color: #333;\n}\n\nli.menu {\n    float: left;\n}\n\nli.logout {\n    float: right;\n}\n\nli.menu a {\n    display: block;\n    color: white;\n    text-align: center;\n    padding: 14px 16px;\n    text-decoration: none;\n}\n\nli.menu a:hover {\n    background-color: #111;\n}\n\nli.logout a {\n    display: block;\n    color: #958a4b;\n    text-align: center;\n    padding: 14px 16px;\n    text-decoration: none;\n}\n\nli.logout a:hover {\n    background-color: #111;\n}")
@@ -150,7 +155,7 @@ func main() {
  |____/_____|_____|_|_.__/ 
                            `)
 	fmt.Print("\n")
-	log := core.GetLogger()
+	log := core.GetLogger() // get logger
 
 	signalChannel := make(chan os.Signal, 2) // bind for signals
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
@@ -161,7 +166,7 @@ func main() {
 			// handle SIGINT
 			print("\n")
 			log.Trace("SIGINT(Interrupt Signal) received. Shutting down server...")
-			log.Info("Server stopped!")
+			log.Warn("Server stopped!")
 			os.Exit(0)
 		case syscall.SIGTERM:
 			// handle SIGTERM
@@ -169,7 +174,7 @@ func main() {
 		}
 	}()
 
-	log.Infof("D2Lib-Go Version %s by %s  GitHub repo %s", VER, AUTHOR, ProjRepo)
+	log.Warnf("D2Lib-Go Version %s by %s  GitHub repo %s", VER, AUTHOR, ProjRepo)
 	log.Info("Press Ctrl+C to stop.")
 	log.Debugf("Working dir: %s", rootPath)
 	log.Debug("Rendering menu bar...")
@@ -178,7 +183,7 @@ func main() {
 		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
 	}
 	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>" // add "home" button to menubar
-	files, _ := os.ReadDir(rootPath + "/" + os.Getenv("D2LIB_sloc"))              // search for folders in current dir
+	files, _ := os.ReadDir(rootPath + "/" + os.Getenv("D2LIB_sloc"))              // search for folders in storage
 	for _, f := range files {                                                     // render menubar
 		if f.IsDir() {
 			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + os.Getenv("D2LIB_hpage") + "\">" + f.Name() + "</a></li>"
@@ -186,7 +191,7 @@ func main() {
 	}
 	menuRender += "</ul></div>"
 	_ = os.Setenv("D2LIB_menu", menuRender)
-	log.Info("Done!")
+	log.Debug("Done!")
 	go core.Cmd() // start cmd
 
 	// set handlers
@@ -195,15 +200,18 @@ func main() {
 		router.HandleFunc("/login", core.LoginHandler()).Methods("POST")
 		router.HandleFunc("/logout", core.LogoutHandler()).Methods("GET")
 	}
+	if os.Getenv("D2LIB_rmexe") == "true" { // set remote executor
+		router.HandleFunc("/remote", core.RemoteExecutor()).Methods("GET")
+	}
+	// set basic functions
 	router.HandleFunc("/favicon.ico", core.FaviconHandler()).Methods("GET")
 	router.HandleFunc("/docs", core.RequestHandler()).Methods("GET")
 	router.HandleFunc("/", core.RedirectHandler()).Methods("GET")
-	log.Infof("Server opened on %s", os.Getenv("D2LIB_addr"))
+	log.Warnf("Server opened on %s", os.Getenv("D2LIB_addr"))
 	http.Handle("/", router) // handle requests to mux router
 
-	err := http.ListenAndServe(os.Getenv("D2LIB_addr"), nil) // start http server
-	if err != nil {
-		log.Panicf("%v", err)
-		return
+	mainErr := http.ListenAndServe(os.Getenv("D2LIB_addr"), nil) // start http server
+	if mainErr != nil {
+		log.Panicf("%v", mainErr)
 	}
 }

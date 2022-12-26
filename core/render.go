@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+/*
+render.go
+Handle and render normal requests
+*/
+
 func RequestHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		log := GetLogger()
@@ -28,14 +33,14 @@ func RequestHandler() http.HandlerFunc {
 					if reqURL[len(reqURL)-3:] == ".md" { // is this a markdown file?
 						splPath := strings.Split(reqURL, "/")
 						fileName := strings.Join(splPath[len(splPath)-1:], "")
-						// render markdown as html
+						// render markdown to html and put it into the template
 						fileText = strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", fileName)
 						fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
 						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
 					} else if reqURL[len(reqURL)-5:] == ".html" { // is this a markdown file?
 						splPath := strings.Split(reqURL, "/")
 						fileName := strings.Join(splPath[len(splPath)-1:], "")
-						// render markdown as html
+						// replace hooks
 						fileText = strings.ReplaceAll(string(fileByte), "{{ TITLE }}", fileName)
 						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
 						fileText = strings.ReplaceAll(fileText, "{{ STYLE }}", "<style>"+os.Getenv("D2LIB_")+os.Getenv("D2LIB_istyle")+"</style>")
@@ -61,14 +66,14 @@ func RedirectHandler() http.HandlerFunc {
 }
 
 func FaviconHandler() http.HandlerFunc {
-	return func(response http.ResponseWriter, request *http.Request) {
+	return func(response http.ResponseWriter, request *http.Request) { // handle favicon
 		log := GetLogger()
 		log.Tracef("[%s] > request for favicon", request.RemoteAddr)
 		http.ServeFile(response, request, os.Getenv("D2LIB_root")+"/templates/favicon.ico")
 	}
 }
 
-func fnfHandler(request *http.Request, response http.ResponseWriter, reqURL string) {
+func fnfHandler(request *http.Request, response http.ResponseWriter, reqURL string) { // handle 404 page
 	log := GetLogger()
 	log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
 	fileText := strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", "404 Page Not Found")

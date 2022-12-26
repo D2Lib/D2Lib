@@ -8,7 +8,12 @@ import (
 	"strings"
 )
 
-type MyFormatter struct{}
+/*
+log.go
+Initialize logger and format outputs
+*/
+
+type formatter struct{}
 
 var levelListColor = []string{
 	"\033[1;51;91m[PANIC",
@@ -56,12 +61,12 @@ func GetLogger() *logrus.Logger {
 			return logLevel
 		}(),
 		ReportCaller: true,
-		Formatter:    &MyFormatter{},
+		Formatter:    &formatter{},
 	}
 	return Log
 }
 
-func (mf *MyFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (mf *formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var b *bytes.Buffer
 	if entry.Buffer != nil {
 		b = entry.Buffer
