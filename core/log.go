@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/ylamothe/logrustash"
 	"os"
 	"strings"
 )
@@ -19,7 +20,7 @@ var levelListColor = []string{
 	"\033[1;51;91m[PANIC",
 	"\033[0;51;91m[FATAL",
 	"\033[91m[ERROR",
-	"\033[93m[WARN",
+	"\033[93m[WARNING",
 	"\033[0m[INFO",
 	"\033[95m[DEBUG",
 	"\033[1;30m[TRACE",
@@ -28,42 +29,58 @@ var levelListPlain = []string{
 	"[PANIC",
 	"[FATAL",
 	"[ERROR",
-	"[WARN",
+	"[WARNING",
 	"[INFO",
 	"[DEBUG",
 	"[TRACE",
 }
 var logLevel logrus.Level
+var Log *logrus.Logger
 
 func GetLogger() *logrus.Logger {
-	Log := &logrus.Logger{
-		Out: os.Stderr,
-		Level: func() logrus.Level {
-			switch os.Getenv("D2LIB_loglv") {
-			case "trace":
-				logLevel = logrus.TraceLevel
-			case "debug":
-				logLevel = logrus.DebugLevel
-			case "info":
-				logLevel = logrus.InfoLevel
-			case "warn":
-				logLevel = logrus.WarnLevel
-			case "error":
-				logLevel = logrus.ErrorLevel
-			case "panic":
-				logLevel = logrus.PanicLevel
-			case "fatal":
-				logLevel = logrus.FatalLevel
-			default:
-				fmt.Printf("Unknown log level: %s.\n", os.Getenv("D2LIB_loglv"))
-				logLevel = logrus.InfoLevel
-			}
-			return logLevel
-		}(),
-		ReportCaller: true,
-		Formatter:    &formatter{},
-	}
 	return Log
+}
+
+func DefineLogger() {
+	log := logrus.New()
+	if os.Getenv("D2LIB_sockl") == "true" {
+		go addSock(log)
+	}
+	log.Out = os.Stderr
+	log.Level = func() logrus.Level {
+		switch os.Getenv("D2LIB_loglv") {
+		case "trace":
+			logLevel = logrus.TraceLevel
+		case "debug":
+			logLevel = logrus.DebugLevel
+		case "info":
+			logLevel = logrus.InfoLevel
+		case "warning":
+			logLevel = logrus.WarnLevel
+		case "error":
+			logLevel = logrus.ErrorLevel
+		case "panic":
+			logLevel = logrus.PanicLevel
+		case "fatal":
+			logLevel = logrus.FatalLevel
+		default:
+			fmt.Printf("Unknown log level: %s.\n", os.Getenv("D2LIB_loglv"))
+			logLevel = logrus.InfoLevel
+		}
+		return logLevel
+	}()
+	log.ReportCaller = true
+	log.Formatter = &formatter{}
+	Log = log
+}
+
+func addSock(log *logrus.Logger) {
+	hook, err := logrustash.NewAsyncHook("tcp", "127.0.0.1:8081", "D2Lib")
+	if err != nil {
+		log.Fatal(err)
+	}
+	hook.TimeFormat = "2006-01-02 15:04:05"
+	log.Hooks.Add(hook)
 }
 
 func (mf *formatter) Format(entry *logrus.Entry) ([]byte, error) {

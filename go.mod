@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/sirupsen/logrus v1.9.0
+	github.com/ylamothe/logrustash v0.0.0-20170628144031-13b8689a7028
 	gopkg.in/ini.v1 v1.67.0
 )
 

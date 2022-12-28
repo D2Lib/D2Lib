@@ -41,8 +41,10 @@ func Executor(cmdInput string) (bool, string) {
 
 func fQuit() (bool, string) {
 	log := GetLogger()
-	log.Warn("Due to some issues on windows systems, we`ve removed this function permanently! Please use Ctrl+C instead!")
-	return false, "Due to some issues on windows systems, we`ve removed this function permanently! Please use Ctrl+C instead!"
+	print("\n")
+	log.Warn("Server stopped!")
+	os.Exit(0)
+	return true, "ok"
 }
 
 func fAccount(splitCmd []string) (bool, string) {

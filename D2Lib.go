@@ -23,7 +23,7 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 This is the main file of D2Lib, it`s used for loading configurations, scanning work directory and starting http server
 */
 
-const VER = "0.2.2-s20221214"
+const VER = "0.2.2-s20221228"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -46,7 +46,7 @@ func init() { // initialize configurations
 			fmt.Printf("Failed to create file: %v \n", err)
 			return
 		}
-		_, _ = newFile.WriteString("[Network]\naddr=\"0.0.0.0:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\n\n[Logger]\nlogLevel=debug\nlogColor=true\n")
+		_, _ = newFile.WriteString("[Network]\naddr=\"0.0.0.0:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=true\nremoteKey=auth\n\n[Logger]\nlogLevel=debug\nlogColor=true\nsocketLogger=true\n")
 		_ = newFile.Close()
 	}
 	cfg, err := ini.Load("config.ini") // read config file
@@ -63,6 +63,7 @@ func init() { // initialize configurations
 	_ = os.Setenv("D2LIB_rmkey", cfg.Section("Security").Key("remoteKey").String())
 	_ = os.Setenv("D2LIB_loglv", cfg.Section("Logger").Key("logLevel").String())
 	_ = os.Setenv("D2LIB_logcl", cfg.Section("Logger").Key("logColor").String())
+	_ = os.Setenv("D2LIB_sockl", cfg.Section("Logger").Key("socketLogger").String())
 
 	// load templates
 	loginPath := os.Getenv("D2LIB_root") + "/templates/login.html"
@@ -155,6 +156,7 @@ func main() {
  |____/_____|_____|_|_.__/ 
                            `)
 	fmt.Print("\n")
+	core.DefineLogger()
 	log := core.GetLogger() // get logger
 
 	signalChannel := make(chan os.Signal, 2) // bind for signals
@@ -175,7 +177,7 @@ func main() {
 	}()
 
 	log.Warnf("D2Lib-Go Version %s by %s  GitHub repo %s", VER, AUTHOR, ProjRepo)
-	log.Info("Press Ctrl+C to stop.")
+	log.Info("Type \"quit\" or press Ctrl+C to stop.")
 	log.Debugf("Working dir: %s", rootPath)
 	log.Debug("Rendering menu bar...")
 	menuRender := "<div><ul class=\"menu\">"
