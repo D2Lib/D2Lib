@@ -4,11 +4,9 @@ import (
 	"D2Lib/core"
 	"fmt"
 	"github.com/gorilla/mux"
-	"gopkg.in/ini.v1"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
@@ -23,7 +21,7 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 This is the main file of D2Lib, it`s used for loading configurations, scanning work directory and starting http server
 */
 
-const VER = "0.2.2-s20221228"
+const VER = "0.2.2-s20221230"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -34,49 +32,20 @@ var router = mux.NewRouter()
 
 func init() { // initialize configurations
 	_ = os.Setenv("D2LIB_root", rootPath)
+	_ = os.Setenv("D2LIB_ver", VER)
+
 	fmt.Println("Scanning working directory...")
 	dirScan()
 
 	fmt.Println("Loading configurations...")
-	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
-		// config fie does not exist
-		fmt.Println("Config file does not exists. Now creating one...")
-		newFile, err := os.Create("config.ini") // create a new one
-		if err != nil {
-			fmt.Printf("Failed to create file: %v \n", err)
-			return
-		}
-		_, _ = newFile.WriteString("[Network]\naddr=\"0.0.0.0:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=true\nremoteKey=auth\n\n[Logger]\nlogLevel=debug\nlogColor=true\nsocketLogger=true\n")
-		_ = newFile.Close()
+	if status, _ := core.LoadConfig(); !status {
+		os.Exit(0)
 	}
-	cfg, err := ini.Load("config.ini") // read config file
-	if err != nil {
-		fmt.Printf("Failed to read file: %v \n", err)
+
+	fmt.Println("Loading templates..")
+	if status, _ := core.LoadTemplate(); !status {
+		os.Exit(0)
 	}
-	// read configurations
-	_ = os.Setenv("D2LIB_addr", cfg.Section("Network").Key("addr").String())
-	_ = os.Setenv("D2LIB_sloc", cfg.Section("Storage").Key("storageLocation").String())
-	_ = os.Setenv("D2LIB_hpage", cfg.Section("Storage").Key("homePage").String())
-	_ = os.Setenv("D2LIB_fpage", cfg.Section("Storage").Key("fnfPage").String())
-	_ = os.Setenv("D2LIB_elogn", cfg.Section("Security").Key("enableLogin").String())
-	_ = os.Setenv("D2LIB_rmexe", cfg.Section("Security").Key("remoteExecute").String())
-	_ = os.Setenv("D2LIB_rmkey", cfg.Section("Security").Key("remoteKey").String())
-	_ = os.Setenv("D2LIB_loglv", cfg.Section("Logger").Key("logLevel").String())
-	_ = os.Setenv("D2LIB_logcl", cfg.Section("Logger").Key("logColor").String())
-	_ = os.Setenv("D2LIB_sockl", cfg.Section("Logger").Key("socketLogger").String())
-
-	// load templates
-	loginPath := os.Getenv("D2LIB_root") + "/templates/login.html"
-	loFileByte, _ := os.ReadFile(loginPath)
-	_ = os.Setenv("D2LIB_lpage", string(loFileByte))
-
-	indexStylePath := os.Getenv("D2LIB_root") + "/templates/index.css"
-	insFileByte, _ := os.ReadFile(indexStylePath)
-	indexStyle := string(insFileByte)
-	_ = os.Setenv("D2LIB_istyle", indexStyle)
-	indexPath := os.Getenv("D2LIB_root") + "/templates/index.html"
-	inFileByte, _ := os.ReadFile(indexPath)
-	_ = os.Setenv("D2LIB_ipage", strings.ReplaceAll(string(inFileByte), "{{ STYLE }}", "<style>"+indexStyle+"</style>"))
 }
 
 func dirScan() {
@@ -180,19 +149,7 @@ func main() {
 	log.Info("Type \"quit\" or press Ctrl+C to stop.")
 	log.Debugf("Working dir: %s", rootPath)
 	log.Debug("Rendering menu bar...")
-	menuRender := "<div><ul class=\"menu\">"
-	if os.Getenv("D2LIB_elogn") == "true" { // add "logout" button to menubar
-		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
-	}
-	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>" // add "home" button to menubar
-	files, _ := os.ReadDir(rootPath + "/" + os.Getenv("D2LIB_sloc"))              // search for folders in storage
-	for _, f := range files {                                                     // render menubar
-		if f.IsDir() {
-			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + os.Getenv("D2LIB_hpage") + "\">" + f.Name() + "</a></li>"
-		}
-	}
-	menuRender += "</ul></div>"
-	_ = os.Setenv("D2LIB_menu", menuRender)
+	core.MenuRender()
 	log.Debug("Done!")
 	go core.Cmd() // start cmd
 
@@ -203,7 +160,7 @@ func main() {
 		router.HandleFunc("/logout", core.LogoutHandler()).Methods("GET")
 	}
 	if os.Getenv("D2LIB_rmexe") == "true" { // set remote executor
-		router.HandleFunc("/remote", core.RemoteExecutor()).Methods("GET")
+		router.HandleFunc("/remote", core.RemoteExecutor()).Methods("POST")
 	}
 	// set basic functions
 	router.HandleFunc("/favicon.ico", core.FaviconHandler()).Methods("GET")

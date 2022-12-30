@@ -75,7 +75,7 @@ func DefineLogger() {
 }
 
 func addSock(log *logrus.Logger) {
-	hook, err := logrustash.NewAsyncHook("tcp", "127.0.0.1:8081", "D2Lib")
+	hook, err := logrustash.NewAsyncHook(os.Getenv("D2LIB_sprot"), os.Getenv("D2LIB_saddr"), os.Getenv("D2LIB_sapp"))
 	if err != nil {
 		log.Fatal(err)
 	}

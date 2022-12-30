@@ -26,11 +26,31 @@ func Executor(cmdInput string) (bool, string) {
 	var status bool
 	var reason string
 	splitCmd := strings.Split(cmdInput, " ") // split args
-	switch {                                 // execute commands
-	case splitCmd[0] == "quit":
+	switch splitCmd[0] {                     // execute commands
+	case "quit":
 		status, reason = fQuit()
-	case splitCmd[0] == "account" && len(splitCmd) == 4:
-		status, reason = fAccount(splitCmd)
+	case "version":
+		status, reason = fVersion()
+	case "account":
+		if len(splitCmd) == 4 {
+			status, reason = fAccount(splitCmd)
+		} else {
+			log.Error("No enough params: ", splitCmd)
+			status = false
+			reason = "No enough params: " + strings.Join(splitCmd, " ")
+		}
+	case "reload":
+		if len(splitCmd) == 2 {
+			status, reason = fReload(splitCmd)
+			if status {
+				log.Warn("Success!")
+			}
+		} else {
+			log.Error("No enough params: ", splitCmd)
+			status = false
+			reason = "No enough params: " + strings.Join(splitCmd, " ")
+		}
+
 	default:
 		log.Errorf("Unknown command: %s", cmdInput)
 		status = false
@@ -47,6 +67,28 @@ func fQuit() (bool, string) {
 	return true, "ok"
 }
 
+func fVersion() (bool, string) {
+	log := GetLogger()
+	log.Warn(os.Getenv("D2LIB_ver"))
+	return true, os.Getenv("D2LIB_ver")
+}
+
 func fAccount(splitCmd []string) (bool, string) {
 	return EditAccount(splitCmd)
+}
+
+func fReload(splitCmd []string) (bool, string) {
+	log := GetLogger()
+	switch splitCmd[1] {
+	case "config":
+		log.Warn("Reload configurations may cause many issues. For a complete reload, please restart your server.")
+		log.Warn("Reloading configurations")
+		return LoadConfig()
+	case "template":
+		log.Warn("Reloading templates")
+		return LoadTemplate()
+	default:
+		log.Error("Unknown param: " + splitCmd[1])
+		return false, "Unknown param: " + splitCmd[1]
+	}
 }
