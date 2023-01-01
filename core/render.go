@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"github.com/gomarkdown/markdown"
+	"github.com/gorilla/mux"
 	"net/http"
 	"os"
 	"strings"
@@ -22,7 +23,7 @@ func RequestHandler() http.HandlerFunc {
 			log.Tracef("[%s] > redirect because not logged in", request.RemoteAddr)
 			http.Redirect(response, request, "/login", 302)
 		} else { // logged in
-			reqURL := "/" + request.URL.Query().Get("path")
+			reqURL := "/" + mux.Vars(request)["path"] // get doc path
 			if len(reqURL) > 1 {
 				log.Tracef("[%s] > request for doc: %s", request.RemoteAddr, reqURL)
 				if _, err := os.Stat(os.Getenv("D2LIB_root") + "/" + os.Getenv("D2LIB_sloc") + reqURL); !os.IsNotExist(err) {
@@ -37,22 +38,23 @@ func RequestHandler() http.HandlerFunc {
 						fileText = strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", fileName)
 						fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", string(markdown.ToHTML(fileByte, nil, nil)))
 						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
-					} else if reqURL[len(reqURL)-5:] == ".html" { // is this a markdown file?
+					} else if reqURL[len(reqURL)-5:] == ".html" { // is this a html file?
 						splPath := strings.Split(reqURL, "/")
 						fileName := strings.Join(splPath[len(splPath)-1:], "")
 						// replace hooks
 						fileText = strings.ReplaceAll(string(fileByte), "{{ TITLE }}", fileName)
 						fileText = strings.ReplaceAll(fileText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
-						fileText = strings.ReplaceAll(fileText, "{{ STYLE }}", "<style>"+os.Getenv("D2LIB_")+os.Getenv("D2LIB_istyle")+"</style>")
+						fileText = strings.ReplaceAll(fileText, "{{ STYLE }}", "<style>"+os.Getenv("D2LIB_istyle")+"</style>")
 					}
 					_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
 				} else {
 					// url does not exist
-					fnfHandler(request, response, reqURL)
+					log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
+					FnfHandler(response, request)
 				}
 			} else {
 				log.Tracef("[%s] > blank url", request.RemoteAddr)
-				fnfHandler(request, response, reqURL)
+				FnfHandler(response, request)
 			}
 		}
 	}
@@ -61,7 +63,7 @@ func RequestHandler() http.HandlerFunc {
 func RedirectHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		// if request for root, redirect to home page
-		http.Redirect(response, request, "/docs?path="+os.Getenv("D2LIB_hpage"), 302)
+		http.Redirect(response, request, "/docs/"+os.Getenv("D2LIB_hpage"), 302)
 	}
 }
 
@@ -73,27 +75,6 @@ func FaviconHandler() http.HandlerFunc {
 	}
 }
 
-func fnfHandler(request *http.Request, response http.ResponseWriter, reqURL string) { // handle 404 page
-	log := GetLogger()
-	log.Tracef("[%s] > url does not exist: %s", request.RemoteAddr, reqURL)
-	fileText := strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", "404 Page Not Found")
-	fileText = strings.ReplaceAll(fileText, "{{ CONTENT }}", os.Getenv("D2LIB_fpage"))
-	fileText = strings.ReplaceAll(fileText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
-	_, _ = fmt.Fprint(response, fileText) // output to http.ResponseWriter
-}
-
-func MenuRender() {
-	menuRender := "<div><ul class=\"menu\">"
-	if os.Getenv("D2LIB_elogn") == "true" { // add "logout" button to menubar
-		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
-	}
-	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>"   // add "home" button to menubar
-	files, _ := os.ReadDir(os.Getenv("D2LIB_root") + "/" + os.Getenv("D2LIB_sloc")) // search for folders in storage
-	for _, f := range files {                                                       // render menubar
-		if f.IsDir() {
-			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs?path=" + f.Name() + "/" + os.Getenv("D2LIB_hpage") + "\">" + f.Name() + "</a></li>"
-		}
-	}
-	menuRender += "</ul></div>"
-	_ = os.Setenv("D2LIB_menu", menuRender)
+func FnfHandler(response http.ResponseWriter, _ *http.Request) { // handle 404 page
+	_, _ = response.Write([]byte(os.Getenv("D2LIB_fnf")))
 }

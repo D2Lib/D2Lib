@@ -66,5 +66,27 @@ func LoadTemplate() (bool, string) {
 		return false, "Failed to load index.html"
 	}
 	_ = os.Setenv("D2LIB_ipage", strings.ReplaceAll(string(inFileByte), "{{ STYLE }}", "<style>"+indexStyle+"</style>"))
+
+	// render menubar
+	menuRender := "<div><ul class=\"menu\">"
+	if os.Getenv("D2LIB_elogn") == "true" { // add "logout" button to menubar
+		menuRender += "<li class=\"logout\"><a class=\"logout\" href=\"/logout\">Log out</a></li>"
+	}
+	menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/\">Home</a></li>"   // add "home" button to menubar
+	files, _ := os.ReadDir(os.Getenv("D2LIB_root") + "/" + os.Getenv("D2LIB_sloc")) // search for folders in storage
+	for _, f := range files {                                                       // render menubar
+		if f.IsDir() {
+			menuRender += "<li class=\"menu\"><a class=\"menu\" href=\"/docs/" + f.Name() + "/" + os.Getenv("D2LIB_hpage") + "\">" + f.Name() + "</a></li>"
+		}
+	}
+	menuRender += "</ul></div>"
+	_ = os.Setenv("D2LIB_menu", menuRender)
+
+	// render 404 page
+	fnfText := strings.ReplaceAll(os.Getenv("D2LIB_ipage"), "{{ TITLE }}", "404 Page Not Found")
+	fnfText = strings.ReplaceAll(fnfText, "{{ CONTENT }}", os.Getenv("D2LIB_fpage"))
+	fnfText = strings.ReplaceAll(fnfText, "{{ MENU }}", os.Getenv("D2LIB_menu"))
+	_ = os.Setenv("D2LIB_fnf", fnfText)
+
 	return true, "Success"
 }

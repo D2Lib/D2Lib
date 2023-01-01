@@ -21,7 +21,7 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 This is the main file of D2Lib, it`s used for loading configurations, scanning work directory and starting http server
 */
 
-const VER = "0.2.2-s20221230"
+const VER = "0.2.2-s20230101"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -148,8 +148,6 @@ func main() {
 	log.Warnf("D2Lib-Go Version %s by %s  GitHub repo %s", VER, AUTHOR, ProjRepo)
 	log.Info("Type \"quit\" or press Ctrl+C to stop.")
 	log.Debugf("Working dir: %s", rootPath)
-	log.Debug("Rendering menu bar...")
-	core.MenuRender()
 	log.Debug("Done!")
 	go core.Cmd() // start cmd
 
@@ -164,8 +162,12 @@ func main() {
 	}
 	// set basic functions
 	router.HandleFunc("/favicon.ico", core.FaviconHandler()).Methods("GET")
-	router.HandleFunc("/docs", core.RequestHandler()).Methods("GET")
+	router.HandleFunc("/docs/{path}", core.RequestHandler()).Methods("GET")                // handle normal doc requests
+	router.HandleFunc("/docs", func(response http.ResponseWriter, request *http.Request) { // if doc path is blank
+		http.Redirect(response, request, "/docs/"+os.Getenv("D2LIB_hpage"), 302) // redirect to home page
+	}).Methods("GET")
 	router.HandleFunc("/", core.RedirectHandler()).Methods("GET")
+	router.NotFoundHandler = http.HandlerFunc(core.FnfHandler)
 	log.Warnf("Server opened on %s", os.Getenv("D2LIB_addr"))
 	http.Handle("/", router) // handle requests to mux router
 

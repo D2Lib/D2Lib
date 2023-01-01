@@ -1,6 +1,6 @@
-### What's new in 0.2.2-s20221230
+### What's new in 0.2.2-s20230101
 ***
 
-1. remote commands must be sent by `POST` requests instead of using url params
-2. add command `version`. this command will return current D2Lib version.
-3. add command `reload`. you can use it to reload configs or templates with arguments: `config` and `template`
+1. use `/docs/<path>/<to>/<file>` to call a file instead of `/docs?path=<path>/<to>/<file>`
+2. add 404 page handler for router
+3. move menubar and 404 page render function into config.go/LoadTemplate()
