@@ -27,4 +27,7 @@
 target/
 
 keypool.lock
-config.ini
+
+*.ini
+
+storage/
