@@ -16,7 +16,7 @@ func LoadConfig() (bool, string) {
 			fmt.Printf("Failed to create config.ini: %v \n", errCreate)
 			return false, "Failed to create config.ini"
 		}
-		_, _ = newFile.WriteString("[Network]\naddr=\"0.0.0.0:8848\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=false\nremoteKey=auth\n\n[Logger]\nlogLevel=debug\nlogColor=true\nsocketLogger=false\n")
+		_, _ = newFile.WriteString("[Network]\naddr=\"127.0.0.1:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=false\nremoteKey=auth\n\n[Logger]\nlogLevel=debug\nlogColor=true\nsocketLogger=false\n")
 		_ = newFile.Close()
 	}
 	cfg, errLoad := ini.Load("config.ini") // read config file

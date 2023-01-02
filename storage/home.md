@@ -1,3 +1,3 @@
 # Home Page
 
-[html sample](/docs?path=text.html)
+[html sample](/docs/text.html)

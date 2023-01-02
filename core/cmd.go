@@ -84,7 +84,7 @@ func fReload(splitCmd []string) (bool, string) {
 		log.Warn("Reload configurations may cause many issues. For a complete reload, please restart your server.")
 		log.Warn("Reloading configurations")
 		return LoadConfig()
-	case "template":
+	case "templates":
 		log.Warn("Reloading templates")
 		return LoadTemplate()
 	default:

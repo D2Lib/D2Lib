@@ -60,6 +60,15 @@ func RequestHandler() http.HandlerFunc {
 	}
 }
 
+func TemplatesHandler() http.HandlerFunc {
+	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
+		log.Tracef("[%s] > request for templates assets: %s", request.RemoteAddr, mux.Vars(request)["path"])
+		fileByte, _ := os.ReadFile(os.Getenv("D2LIB_root") + "/templates/" + mux.Vars(request)["path"])
+		_, _ = fmt.Fprint(response, string(fileByte))
+	}
+}
+
 func RedirectHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		// if request for root, redirect to home page
