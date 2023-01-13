@@ -3,11 +3,12 @@ package main
 import (
 	"D2Lib/core"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/gorilla/mux"
 )
 
 /*
@@ -21,7 +22,7 @@ GitHub repo: https://github.com/D2Lib/D2Lib
 This is the main file of D2Lib, it`s used for loading configurations, scanning work directory and starting http server
 */
 
-const VER = "0.2.2-s20230102"
+const VER = "0.2.2-s20230113"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
