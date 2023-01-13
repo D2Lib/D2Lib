@@ -3,10 +3,12 @@ package core
 import (
 	"bytes"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/ylamothe/logrustash"
+	"net"
 	"os"
 	"strings"
+
+	logrustash "github.com/bshuster-repo/logrus-logstash-hook"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -75,11 +77,11 @@ func DefineLogger() {
 }
 
 func addSock(log *logrus.Logger) {
-	hook, err := logrustash.NewAsyncHook(os.Getenv("D2LIB_sprot"), os.Getenv("D2LIB_saddr"), os.Getenv("D2LIB_sapp"))
+	conn, err := net.Dial(os.Getenv("D2LIB_sprot"), os.Getenv("D2LIB_saddr"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	hook.TimeFormat = "2006-01-02 15:04:05"
+	hook := logrustash.New(conn, logrustash.DefaultFormatter(logrus.Fields{"type": os.Getenv("D2LIB_sapp")}))
 	log.Hooks.Add(hook)
 }
 
