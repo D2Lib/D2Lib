@@ -2,36 +2,93 @@ package core
 
 import (
 	"bufio"
-	"log"
 	"os"
 	"strings"
 )
 
-func Cmd(rootPath string) {
-	log.Println("> Command Line Tool started")
+/*
+cmd.go
+Bind for inputs, extract inputs and execute functions
+*/
+
+func Cmd() {
+	log := GetLogger()
+	log.Debug("Command Line Tool started")
 	scanner := bufio.NewScanner(os.Stdin) // check input
 	for scanner.Scan() {
 		cmdInput := scanner.Text() // scan input
-		Executor(cmdInput, rootPath)
+		Executor(cmdInput)
 	}
 }
 
-func Executor(cmdInput string, rootPath string) {
+func Executor(cmdInput string) (bool, string) {
+	log := GetLogger()
+	var status bool
+	var reason string
 	splitCmd := strings.Split(cmdInput, " ") // split args
-	switch {                                 // execute commands
-	case splitCmd[0] == "quit":
-		fQuit()
-	case splitCmd[0] == "account" && len(splitCmd) == 4:
-		fAccount(splitCmd, rootPath)
+	switch splitCmd[0] {                     // execute commands
+	case "quit":
+		status, reason = fQuit()
+	case "version":
+		status, reason = fVersion()
+	case "account":
+		if len(splitCmd) == 4 {
+			status, reason = fAccount(splitCmd)
+		} else {
+			log.Error("No enough params: ", splitCmd)
+			status = false
+			reason = "No enough params: " + strings.Join(splitCmd, " ")
+		}
+	case "reload":
+		if len(splitCmd) == 2 {
+			status, reason = fReload(splitCmd)
+			if status {
+				log.Warn("Success!")
+			}
+		} else {
+			log.Error("No enough params: ", splitCmd)
+			status = false
+			reason = "No enough params: " + strings.Join(splitCmd, " ")
+		}
+
 	default:
-		log.Printf("> Unknown command: %s\n", cmdInput)
+		log.Errorf("Unknown command: %s", cmdInput)
+		status = false
+		reason = "Unknown command: " + cmdInput
 	}
+	return status, reason
 }
 
-func fQuit() {
-	log.Println("\033[93m> Due to some issues on windows systems, we`ve removed this function permantely! Please use Ctrl+C instead!\033[0m")
+func fQuit() (bool, string) {
+	log := GetLogger()
+	print("\n")
+	log.Warn("Server stopped!")
+	os.Exit(0)
+	return true, "ok"
 }
 
-func fAccount(splitCmd []string, rootPath string) {
-	EditAccount(splitCmd, rootPath)
+func fVersion() (bool, string) {
+	log := GetLogger()
+	log.Warn(os.Getenv("D2LIB_ver"))
+	return true, os.Getenv("D2LIB_ver")
+}
+
+func fAccount(splitCmd []string) (bool, string) {
+	return EditAccount(splitCmd)
+}
+
+func fReload(splitCmd []string) (bool, string) {
+	log := GetLogger()
+	switch splitCmd[1] {
+	case "config":
+		log.Warn("Reload configurations may cause many issues. For a complete reload, please restart your server.")
+		log.Warn("Reloading configurations")
+		return LoadConfig()
+	case "templates":
+		log.Warn("Reloading templates")
+		return LoadTemplate()
+	default:
+		log.Error("Unknown param: " + splitCmd[1])
+		return false, "Unknown param: " + splitCmd[1]
+	}
 }

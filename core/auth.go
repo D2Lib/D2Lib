@@ -5,11 +5,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/gorilla/securecookie"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 )
+
+/*
+auth.go
+Handle login requests and manage accounts
+*/
 
 var cookieHandler = securecookie.New( // generate cookie key
 	securecookie.GenerateRandomKey(64),
@@ -70,17 +74,18 @@ func contains(s []string, str string) bool {
 }
 
 // LoginHandler handle login
-func LoginHandler(enableLogin bool) http.HandlerFunc {
+func LoginHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
+		log := GetLogger()
 		// receive login form
 		name := request.FormValue("name")
 		pass := request.FormValue("pass")
-		redirectTarget := "/login"
-		hash := sha256.Sum256([]byte(name + " " + pass))                // generate hash
-		if contains(keys, hex.EncodeToString(hash[:])) && enableLogin { // compare with stored hash IDs
+		redirectTarget := "/login?status=err"
+		hash := sha256.Sum256([]byte(name + " " + pass))                                       // generate hash
+		if contains(keys, hex.EncodeToString(hash[:])) && os.Getenv("D2LIB_elogn") == "true" { // compare with stored hash IDs
 			// exist hash ID (correct psw)
 			setSession(name, response) // set cookie session to remember login status
-			log.Printf("[%s] > logged in as %s\n", request.RemoteAddr, name)
+			log.Tracef("[%s] > logged in as %s", request.RemoteAddr, name)
 			redirectTarget = "/" // set redirect target to root
 		}
 		http.Redirect(response, request, redirectTarget, 302) // do redirect
@@ -88,16 +93,21 @@ func LoginHandler(enableLogin bool) http.HandlerFunc {
 }
 
 // LoginPageHandler handle login page
-func LoginPageHandler(enableLogin bool, loginPage string) http.HandlerFunc {
+func LoginPageHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
-		if enableLogin { // check if login is enabled
+		log := GetLogger()
+		if os.Getenv("D2LIB_elogn") == "true" { // check if login is enabled
 			// handle login page
-			log.Printf("[%s] > request for login page\n", request.RemoteAddr)
+			log.Tracef("[%s] > request for login page", request.RemoteAddr)
 			userName := getUserName(request) // get username
 			if userName != "" {              // if username exists for current session (already logged in)
 				http.Redirect(response, request, "/", 302) // redirect to root
 			} else { // if no username (not logged in)
-				_, _ = fmt.Fprintf(response, loginPage) // print login page
+				loginStatus := ""
+				if request.URL.Query().Get("status") == "err" {
+					loginStatus = "Error username or password"
+				}
+				_, _ = fmt.Fprintf(response, strings.ReplaceAll(os.Getenv("D2LIB_lpage"), "{{ ERR }}", loginStatus)) // print login page
 			}
 		} else { // if not
 			http.Redirect(response, request, "/", 302) // redirect to root
@@ -106,11 +116,12 @@ func LoginPageHandler(enableLogin bool, loginPage string) http.HandlerFunc {
 }
 
 // LogoutHandler handle logout
-func LogoutHandler(enableLogin bool) http.HandlerFunc {
+func LogoutHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
-		if enableLogin { // check if login is enabled
+		log := GetLogger()
+		if os.Getenv("D2LIB_elogn") == "true" { // check if login is enabled
 			userName := getUserName(request) // get username
-			log.Printf("[%s] > logout %s\n", request.RemoteAddr, userName)
+			log.Tracef("[%s] > logout %s", request.RemoteAddr, userName)
 			clearSession(response)                     // delete cookie for current session (clear login status)
 			http.Redirect(response, request, "/", 302) // redirect to root
 		} else { // if not
@@ -119,15 +130,32 @@ func LogoutHandler(enableLogin bool) http.HandlerFunc {
 	}
 }
 
-func EditAccount(splitCmd []string, rootPath string) {
-	if splitCmd[1] == "add" {
-		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
-		openFile, _ := os.OpenFile(rootPath+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n"))
+func EditAccount(splitCmd []string) (bool, string) {
+	log := GetLogger()
+	if splitCmd[1] == "add" { // add account
+		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3])) // generate hash
+		openFile, _ := os.OpenFile(os.Getenv("D2LIB_root")+"/keypool.lock", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		_, _ = openFile.Write([]byte(hex.EncodeToString(hash[:]) + "\n")) // add to keypool file
 		_ = openFile.Close()
-		keys = append(keys, hex.EncodeToString(hash[:]))
-		log.Printf("Successfully added account: %s %s\n", splitCmd[2], splitCmd[3])
+		keys = append(keys, hex.EncodeToString(hash[:])) // add to current keypool
+		log.Warnf("Successfully added account: %s %s", splitCmd[2], splitCmd[3])
+		return true, "Successfully added account: " + splitCmd[2] + " " + splitCmd[3]
 	} else if splitCmd[1] == "del" {
-		// pass
+		hash := sha256.Sum256([]byte(splitCmd[2] + " " + splitCmd[3]))
+		poolByte, _ := os.ReadFile(os.Getenv("D2LIB_root") + "/keypool.lock")
+		openFile, _ := os.OpenFile(os.Getenv("D2LIB_root")+"/keypool.lock", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		_, _ = openFile.Write([]byte(strings.ReplaceAll(string(poolByte), hex.EncodeToString(hash[:])+"\n", ""))) // delete from keypool file
+		_ = openFile.Close()
+		for i, v := range keys { // delete from current keypool
+			if v == hex.EncodeToString(hash[:]) {
+				keys = append(keys[:i], keys[i+1:]...)
+				break
+			}
+		}
+		log.Warnf("Successfully deleted account: %s %s", splitCmd[2], splitCmd[3])
+		return true, "Successfully deleted account: " + splitCmd[2] + " " + splitCmd[3]
+	} else {
+		log.Errorf("Unknown param: %s", splitCmd[1])
+		return false, "Unknown param: " + splitCmd[1]
 	}
 }
