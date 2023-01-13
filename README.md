@@ -1,4 +1,8 @@
 # D2Lib
+
+<img src="https://img.shields.io/github/actions/workflow/status/D2Lib/D2Lib/test.yml?style=flat-square"> <img src="https://img.shields.io/github/directory-file-count/D2Lib/D2Lib?style=flat-square"> <img src="https://img.shields.io/github/repo-size/D2Lib/D2Lib?style=flat-square"> <img src="https://img.shields.io/github/downloads/D2Lib/D2Lib/total?style=flat-square"> <img src="https://img.shields.io/github/license/D2Lib/D2Lib?style=flat-square">
+<img src="https://img.shields.io/github/go-mod/go-version/D2Lib/D2Lib?style=flat-square">
+
 A simple webserver for building online knowledge bases with intergrated css style. Support both markdown and html files.
 
 D2Lib(D2Lib-Go) is the next generation for [D2Lib](https://github.com/ArthurZhou/D2Lib). This version is fully coded by Go.
