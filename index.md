@@ -5,8 +5,10 @@ A simple webserver for building online knowledge bases with intergrated css styl
 <hr>
 <br>
 
-[D2Lib main repo](https://github.com/D2Lib/D2Lib)
-<br>
-[D2Lib dev repo](https://github.com/ArthurZhou/D2Lib-Go)
+<noframes>
+  <a href="https://github.com/D2Lib/D2Lib">D2Lib main repo</a>
+  <br>
+  <a href="https://github.com/ArthurZhou/D2Lib-Go">D2Lib dev repo</a>
+</noframes>
 <br>
 
