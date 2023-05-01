@@ -23,6 +23,7 @@ This is the main file of D2Lib, it`s used for loading configurations, scanning w
 */
 
 const VER = "0.2.2-s20230113"
+const VER_NUM = "10001"
 const AUTHOR = "ArthurZhou"
 const ProjRepo = "https://github.com/D2Lib/D2Lib"
 
@@ -34,6 +35,7 @@ var router = mux.NewRouter()
 func init() { // initialize configurations
 	_ = os.Setenv("D2LIB_root", rootPath)
 	_ = os.Setenv("D2LIB_ver", VER)
+	_ = os.Setenv("D2LIB_vernum", VER_NUM)
 
 	fmt.Println("Scanning working directory...")
 	dirScan()
@@ -151,6 +153,8 @@ func main() {
 	log.Debugf("Working dir: %s", rootPath)
 	log.Debug("Done!")
 	go core.Cmd() // start cmd
+
+	core.ScanPlugin(router)
 
 	// set handlers
 	if os.Getenv("D2LIB_elogn") == "true" { // set auth functions
