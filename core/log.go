@@ -25,7 +25,7 @@ var levelListColor = []string{
 	"\033[93m[WARNING",
 	"\033[0m[INFO",
 	"\033[95m[DEBUG",
-	"\033[1;30m[TRACE",
+	"\033[1;37m[TRACE",
 }
 var levelListPlain = []string{
 	"[PANIC",

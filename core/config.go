@@ -16,7 +16,7 @@ func LoadConfig() (bool, string) {
 			fmt.Printf("Failed to create config.ini: %v \n", errCreate)
 			return false, "Failed to create config.ini"
 		}
-		_, _ = newFile.WriteString("[Network]\naddr=\"127.0.0.1:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=false\nremoteKey=auth\n\n[Logger]\nlogLevel=debug\nlogColor=true\nsocketLogger=false\n")
+		_, _ = newFile.WriteString("[Network]\naddr=\"127.0.0.1:8080\"\n\n[Storage]\nstorageLocation=\"storage\"\nhomePage=\"home.md\"\nfnfPage=\"<h1>404</h1><br><center><p>Page Not Found</p></center>\"\n\n[Security]\nenableLogin=false\nremoteExecute=false\nremoteKey=auth\n\n[Logger]\nlogLevel=info\nlogColor=true\nsocketLogger=false\n\n[Plugin]\nenablePlugins=true\n")
 		_ = newFile.Close()
 	}
 	cfg, errLoad := ini.Load("config.ini") // read config file
@@ -38,12 +38,13 @@ func LoadConfig() (bool, string) {
 	_ = os.Setenv("D2LIB_saddr", cfg.Section("Logger").Key("socketAddress").String())
 	_ = os.Setenv("D2LIB_sprot", cfg.Section("Logger").Key("socketProto").String())
 	_ = os.Setenv("D2LIB_sapp", cfg.Section("Logger").Key("socketApp").String())
+	_ = os.Setenv("D2LIB_plug", cfg.Section("Plugin").Key("enablePlugins").String())
 	return true, "Success"
 }
 
 func LoadTemplate() (bool, string) {
-	// load templates
-	loginPath := os.Getenv("D2LIB_root") + "/templates/login.html"
+	// load assets
+	loginPath := os.Getenv("D2LIB_root") + "/assets/login.html"
 	loFileByte, errLo := os.ReadFile(loginPath)
 	if errLo != nil {
 		fmt.Printf("Failed to load login.html: %v \n", errLo)
@@ -51,7 +52,7 @@ func LoadTemplate() (bool, string) {
 	}
 	_ = os.Setenv("D2LIB_lpage", string(loFileByte))
 
-	indexStylePath := os.Getenv("D2LIB_root") + "/templates/index.css"
+	indexStylePath := os.Getenv("D2LIB_root") + "/assets/css/index.css"
 	insFileByte, errIns := os.ReadFile(indexStylePath)
 	if errIns != nil {
 		fmt.Printf("Failed to load index.css: %v \n", errIns)
@@ -59,7 +60,7 @@ func LoadTemplate() (bool, string) {
 	}
 	indexStyle := string(insFileByte)
 	_ = os.Setenv("D2LIB_istyle", indexStyle)
-	indexPath := os.Getenv("D2LIB_root") + "/templates/index.html"
+	indexPath := os.Getenv("D2LIB_root") + "/assets/index.html"
 	inFileByte, errIn := os.ReadFile(indexPath)
 	if errIn != nil {
 		fmt.Printf("Failed to load index.html: %v \n", errIn)
