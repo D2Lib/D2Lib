@@ -23,7 +23,7 @@ func RequestHandler() http.HandlerFunc {
 			log.Tracef("[%s] > redirect because not logged in", request.RemoteAddr)
 			http.Redirect(response, request, "/login", 302)
 		} else { // logged in
-			reqURL := "/" + mux.Vars(request)["path"] // get doc path
+			reqURL := request.URL.Path // get doc path
 			if len(reqURL) > 1 {
 				log.Tracef("[%s] > request for doc: %s", request.RemoteAddr, reqURL)
 				if _, err := os.Stat(os.Getenv("D2LIB_root") + "/" + os.Getenv("D2LIB_sloc") + reqURL); !os.IsNotExist(err) {
@@ -63,8 +63,8 @@ func RequestHandler() http.HandlerFunc {
 func TemplatesHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) {
 		log := GetLogger()
-		log.Tracef("[%s] > request for templates assets: %s", request.RemoteAddr, mux.Vars(request)["path"])
-		fileByte, _ := os.ReadFile(os.Getenv("D2LIB_root") + "/templates/" + mux.Vars(request)["path"])
+		log.Tracef("[%s] > request for assets assets: %s", request.RemoteAddr, mux.Vars(request)["path"])
+		fileByte, _ := os.ReadFile(os.Getenv("D2LIB_root") + "/assets" + request.URL.Path)
 		_, _ = fmt.Fprint(response, string(fileByte))
 	}
 }
@@ -80,10 +80,11 @@ func FaviconHandler() http.HandlerFunc {
 	return func(response http.ResponseWriter, request *http.Request) { // handle favicon
 		log := GetLogger()
 		log.Tracef("[%s] > request for favicon", request.RemoteAddr)
-		http.ServeFile(response, request, os.Getenv("D2LIB_root")+"/templates/favicon.ico")
+		http.ServeFile(response, request, os.Getenv("D2LIB_root")+"/assets/favicon.ico")
 	}
 }
 
 func FnfHandler(response http.ResponseWriter, _ *http.Request) { // handle 404 page
+	response.WriteHeader(404)
 	_, _ = response.Write([]byte(os.Getenv("D2LIB_fnf")))
 }

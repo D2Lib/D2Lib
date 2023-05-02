@@ -31,3 +31,4 @@ keypool.lock
 *.ini
 
 storage/
+/plugins/

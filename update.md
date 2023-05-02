@@ -1,4 +1,5 @@
-### What's new in 0.2.2-s20230113
+### What's new in 0.2.2-s20230502
 ***
 
-1. change dependency `https://github.com/cheshir/logrustash` to `https://github.com/bshuster-repo/logrus-logstash-hook`
+1. plugin support
+2. rename `templates` to `assets`
